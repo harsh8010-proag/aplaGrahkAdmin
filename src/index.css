@@ -1,0 +1,34 @@
+@import url('https://fonts.cdnfonts.com/css/mona-sans');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: 'Mona Sans', sans-serif;
+  --color-primary: #F97316;
+  --color-primary-hover: #EA580C;
+  --color-sidebar: #1E293B;
+  --color-sidebar-hover: #334155;
+  --color-sidebar-active: #0F172A;
+  --color-background: #F8FAFC;
+}
+
+body {
+  font-family: 'Mona Sans', sans-serif;
+  /* font-weight: 700; */
+  background-color: var(--color-background);
+  color: #0f172a;
+}
+
+/* Hide scrollbar but keep scroll functionality is there and here */
+*::-webkit-scrollbar {
+  display: none;
+}
+
+* {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Turn sidebar icon orange when active */
+.sidebar-icon-active {
+  filter: brightness(0) saturate(100%) invert(52%) sepia(90%) saturate(2000%) hue-rotate(360deg) brightness(98%) contrast(95%);
+}
