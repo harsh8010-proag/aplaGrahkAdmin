@@ -29,7 +29,7 @@ export const authApi = createApi({
     }),
     getAdminUsers: builder.query({
       query: () => ({
-        url: '/api/v1/user/get-admin-user',
+        url: '/v1/user/get-admin-user',
         method: 'GET',
       }),
     }),

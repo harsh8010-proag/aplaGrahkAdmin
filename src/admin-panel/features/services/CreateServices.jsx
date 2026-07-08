@@ -7,13 +7,17 @@ import {
   CheckCircle2,
   XCircle,
 } from "lucide-react";
-import { useCreateServiceMutation } from "../../../redux/api/servicesApi";
+import {
+  useCreateServiceMutation,
+  useUpdateServiceMutation,
+  useGetServicesQuery,
+} from "../../../redux/api/servicesApi";
 import { useGetAllDocumentTypeQuery } from "../../../redux/api/documentApi";
 import toast from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
 import { useEffect } from "react";
 import { useLocation } from "react-router-dom";
-import { useUpdateServiceMutation } from "../../../redux/api/servicesApi";
+// import { useUpdateServiceMutation } from "../../../redux/api/servicesApi";
 
 const LANGS = [
   { key: "en", label: "English" },
@@ -71,6 +75,9 @@ export default function CreateServices() {
   const [whatsappTemplate, setWhatsappTemplate] = useState(emptyTri);
   const [iconFile, setIconFile] = useState(null);
   const [iconPreview, setIconPreview] = useState(null);
+  const [subService, setSubService] = useState("");
+  const [option, setOption] = useState({ name: "", description: "" });
+  const [question, setQuestion] = useState({ title: "", description: "" });
 
   const navigate = useNavigate();
 
@@ -82,6 +89,7 @@ export default function CreateServices() {
 
   const [createService, { isLoading, isError }] = useCreateServiceMutation();
   const { data: getAllDocumentType } = useGetAllDocumentTypeQuery();
+  const { data: getAllSubServices } = useGetServicesQuery();
 
   // console.log("All Document Type:", getAllDocumentType);
 
@@ -95,6 +103,9 @@ export default function CreateServices() {
     setIsActive(editingService.isActive ?? true);
     setDisplayOrder(String(editingService.displayOrder ?? "1"));
     setWhatsappTemplate(editingService.whatsappTemplate || emptyTri);
+    setWhatsappTemplate(editingService.whatsappTemplate || emptyTri);
+    setOption(editingService.option || { name: "", description: "" });
+    setQuestion(editingService.question || { title: "", description: "" });
 
     if (
       Array.isArray(editingService.documents) &&
@@ -185,68 +196,74 @@ export default function CreateServices() {
     setIconPreview(URL.createObjectURL(file));
   };
 
- const handleSubmit = async (e) => {
-  e.preventDefault();
+  const handleSubmit = async (e) => {
+    e.preventDefault();
 
-  // ✅ Empty formFields (jinka key khali hai) filter kar do
-  const cleanedFormFields = formFields.filter(
-    (f) => f.key && f.key.trim() !== "",
-  );
+    // ✅ Empty formFields (jinka key khali hai) filter kar do
+    const cleanedFormFields = formFields.filter(
+      (f) => f.key && f.key.trim() !== "",
+    );
 
-  // ✅ Empty documents (jinka documentTypeId khali hai) bhi filter kar do
-  const cleanedDocuments = documents.filter(
-    (d) => d.documentTypeId && d.documentTypeId.trim() !== "",
-  );
+    // ✅ Empty documents (jinka documentTypeId khali hai) bhi filter kar do
+    const cleanedDocuments = documents.filter(
+      (d) => d.documentTypeId && d.documentTypeId.trim() !== "",
+    );
 
-  try {
-    if (isEditMode) {
-      // ✅ Update ke time JSON bhejna hai (curl jaisa)
-      const jsonPayload = {
-        name,
-        description,
-        priceInPaise: Number(priceInPaise),
-        processingTime,
-        documents: cleanedDocuments,
-        formFields: cleanedFormFields,
-        isActive,
-        displayOrder: Number(displayOrder),
-        whatsappTemplate,
-      };
+    try {
+      if (isEditMode) {
+        // ✅ Update ke time JSON bhejna hai (curl jaisa)
+        const jsonPayload = {
+          name,
+          description,
+          priceInPaise: Number(priceInPaise),
+          processingTime,
+          documents: cleanedDocuments,
+          formFields: cleanedFormFields,
+          isActive,
+          displayOrder: Number(displayOrder),
+          whatsappTemplate,
+          subService,
+          option,
+          question,
+        };
 
-      await updateService({
-        id: editingService._id,
-        body: jsonPayload,
-      }).unwrap();
-      toast.success("Service updated successfully!");
-    } else {
-      // ✅ Create ke time FormData bhejna hai (curl jaisa)
-      const fd = new FormData();
-      fd.append("name", JSON.stringify(name));
-      fd.append("description", JSON.stringify(description));
-      fd.append("priceInPaise", priceInPaise);
-      fd.append("processingTime", JSON.stringify(processingTime));
-      fd.append("documents", JSON.stringify(cleanedDocuments));
-      fd.append("formFields", JSON.stringify(cleanedFormFields));
-      fd.append("isActive", String(isActive));
-      fd.append("displayOrder", displayOrder);
-      fd.append("whatsappTemplate", JSON.stringify(whatsappTemplate));
-      if (iconFile) fd.append("iconFile", iconFile);
+        await updateService({
+          id: editingService._id,
+          body: jsonPayload,
+        }).unwrap();
+        toast.success("Service updated successfully!");
+      } else {
+        // ✅ Create ke time FormData bhejna hai (curl jaisa)
+        const fd = new FormData();
+        fd.append("name", JSON.stringify(name));
+        fd.append("description", JSON.stringify(description));
+        fd.append("priceInPaise", priceInPaise);
+        fd.append("processingTime", JSON.stringify(processingTime));
+        fd.append("documents", JSON.stringify(cleanedDocuments));
+        fd.append("formFields", JSON.stringify(cleanedFormFields));
+        fd.append("isActive", String(isActive));
+        fd.append("displayOrder", displayOrder);
+        fd.append("whatsappTemplate", JSON.stringify(whatsappTemplate));
+        fd.append("subService", subService);
+        fd.append("option", JSON.stringify(option));
+        fd.append("question", JSON.stringify(question));
+        if (iconFile) fd.append("iconFile", iconFile);
 
-      await createService(fd).unwrap();
-      toast.success("Service created successfully!");
+        await createService(fd).unwrap();
+        toast.success("Service created successfully!");
+      }
+
+      navigate("/services");
+    } catch (err) {
+      console.error("SUBMIT ERROR:", err);
+      const message =
+        err?.data?.message ||
+        err?.error ||
+        err?.message ||
+        "Something went wrong";
+      toast.error(message);
     }
-
-    navigate("/services");
-  } catch (err) {
-    console.error("SUBMIT ERROR:", err);
-    const message =
-      err?.data?.message ||
-      err?.error ||
-      err?.message ||
-      "Something went wrong";
-    toast.error(message);
-  }
-};
+  };
   return (
     <div className="min-h-screen text-black">
       <form
@@ -361,6 +378,70 @@ export default function CreateServices() {
                     className="h-12 w-12 rounded-lg object-contain border border-slate-200"
                   />
                 )}
+              </div>
+            </div>
+            <div>
+              <label className="text-sm font-medium text-black">
+                Sub Service (Optional)
+              </label>
+              <select
+                value={subService}
+                onChange={(e) => setSubService(e.target.value)}
+                className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-black focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+              >
+                <option value="">Select sub service</option>
+                {getAllSubServices?.data?.map((sub) => (
+                  <option key={sub._id} value={sub._id}>
+                    {sub.name?.en || sub.internalKey}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="sm:col-span-2">
+              <label className="text-sm font-medium text-black">
+                Option (Category)
+              </label>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-1">
+                <input
+                  value={option.name}
+                  onChange={(e) =>
+                    setOption({ ...option, name: e.target.value })
+                  }
+                  placeholder="e.g. Identity Service"
+                  className="rounded-lg border border-slate-300 px-3 py-2 text-sm text-black placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                />
+                <input
+                  value={option.description}
+                  onChange={(e) =>
+                    setOption({ ...option, description: e.target.value })
+                  }
+                  placeholder="e.g. Citizen identity services"
+                  className="rounded-lg border border-slate-300 px-3 py-2 text-sm text-black placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                />
+              </div>
+            </div>
+
+            <div className="sm:col-span-2">
+              <label className="text-sm font-medium text-black">
+                FAQ / Question
+              </label>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-1">
+                <input
+                  value={question.title}
+                  onChange={(e) =>
+                    setQuestion({ ...question, title: e.target.value })
+                  }
+                  placeholder="e.g. Who can apply?"
+                  className="rounded-lg border border-slate-300 px-3 py-2 text-sm text-black placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                />
+                <input
+                  value={question.description}
+                  onChange={(e) =>
+                    setQuestion({ ...question, description: e.target.value })
+                  }
+                  placeholder="e.g. Any Indian citizen can apply"
+                  className="rounded-lg border border-slate-300 px-3 py-2 text-sm text-black placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                />
               </div>
             </div>
           </section>

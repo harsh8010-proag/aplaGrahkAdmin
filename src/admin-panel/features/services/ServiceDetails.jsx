@@ -36,40 +36,42 @@ const steps = [
 const ServiceDetails = () => {
   const { id } = useParams();
 
-  console.log("ID:", id);
+  // console.log("ID:", id);
 
   const { data: serviceData, isLoading, error } = useGetServiceByIdQuery(id);
 
   const service = serviceData?.data;
 
   console.log("Service Data:", serviceData);
-  console.log("Error:", error);
+  // console.log("Error:", error);
 
   const stats = [
     {
       title: "Applications Processed",
-      value: "200",
+      value: service?.stats?.applicationsProcessed ?? 0,
       sub: "Total applications completed",
       icon: User,
       color: "bg-blue-100 text-blue-600",
     },
     {
       title: "Users Served",
-      value: "150",
+      value: service?.stats?.usersServed ?? 0,
       sub: "Unique users served",
       icon: Users,
       color: "bg-green-100 text-green-600",
     },
     {
       title: "Service Fees",
-      value: `₹${(service?.priceInPaise || 0) / 100}`,
+      value: `₹${service?.stats?.serviceFee ?? (service?.priceInPaise || 0) / 100}`,
       sub: "Per application",
       icon: IndianRupee,
       color: "bg-orange-100 text-orange-500",
     },
     {
       title: "Estimated Time",
-      value: service?.processingTime?.en,
+      value: service?.stats?.estimatedTime
+        ? `${service.stats.estimatedTime}`
+        : service?.processingTime?.en,
       sub: "Processing time",
       icon: Clock3,
       color: "bg-purple-100 text-purple-600",
@@ -255,20 +257,56 @@ const ServiceDetails = () => {
           </thead>
 
           <tbody>
-            <tr className="border-t">
-              <td className="p-4">APP-2024-001</td>
-              <td className="p-4">Rahul Sharma</td>
-              <td className="p-4">9876543210</td>
-              <td className="p-4">15 Jan 2024</td>
+            {service?.recentApplications?.length > 0 ? (
+              service.recentApplications.map((app) => {
+                const statusStyles = {
+                  Pending: "bg-yellow-100 text-yellow-700",
+                  Completed: "bg-green-100 text-green-700",
+                  Rejected: "bg-red-100 text-red-700",
+                  "In Progress": "bg-blue-100 text-blue-700",
+                };
 
-              <td className="p-4">
-                <span className="px-3 py-1 rounded-full bg-green-100 text-green-700 text-xs">
-                  Completed
-                </span>
-              </td>
-
-              <td className="p-4 text-blue-600 cursor-pointer">View Details</td>
-            </tr>
+                return (
+                  <tr key={app._id} className="border-t">
+                    <td className="p-4">{app._id?.slice(-8).toUpperCase()}</td>
+                    <td className="p-4">
+                      {app.formData?.applicantName || app.userId?.name || "N/A"}
+                    </td>
+                    <td className="p-4">
+                      {app.formData?.mobileNumber ||
+                        app.userId?.mobileNumber ||
+                        "N/A"}
+                    </td>
+                    <td className="p-4">
+                      {new Date(app.createdAt).toLocaleDateString("en-IN", {
+                        day: "2-digit",
+                        month: "short",
+                        year: "numeric",
+                      })}
+                    </td>
+                    <td className="p-4">
+                      <span
+                        className={`px-3 py-1 rounded-full text-xs ${
+                          statusStyles[app.status] ||
+                          "bg-gray-100 text-gray-700"
+                        }`}
+                      >
+                        {app.status}
+                      </span>
+                    </td>
+                    <td className="p-4 text-blue-600 cursor-pointer">
+                      View Details
+                    </td>
+                  </tr>
+                );
+              })
+            ) : (
+              <tr>
+                <td colSpan={6} className="p-6 text-center text-gray-400">
+                  No recent applications found
+                </td>
+              </tr>
+            )}
           </tbody>
         </table>
 

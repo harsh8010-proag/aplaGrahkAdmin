@@ -21,18 +21,18 @@ export default function Applications({ applications }) {
                 className={`border-b border-gray-100 hover:bg-gray-50 transition-colors ${idx === applications.length - 1 ? 'border-none' : ''}`}
               >
                 <td className="px-6 py-4 font-bold text-gray-500 whitespace-nowrap">
-                  {app.id}
+                  {app?.id}
                 </td>
                 <td className="px-6 py-4 font-bold text-gray-900 whitespace-nowrap">
-                  {app.service}
+                  {app?.service}
                 </td>
                 <td className="px-6 py-4 font-bold text-gray-500 whitespace-nowrap">
-                  {app.submitted}
+                  {app?.submitted}
                 </td>
                 <td className="px-6 py-4">
                   <span className={`px-4 py-1.5 rounded-full inline-flex items-center justify-center font-bold text-xs ${
-                    app.payment === 'Success' ? 'bg-[#E6F9F0] text-[#00A962]' :
-                    app.payment === 'Pending' ? 'bg-[#FFEAD6] text-[#FF8303]' :
+                    app?.payment === 'Success' ? 'bg-[#E6F9F0] text-[#00A962]' :
+                    app?.payment === 'Pending' ? 'bg-[#FFEAD6] text-[#FF8303]' :
                     'bg-[#FEECEB] text-[#D93025]'
                   }`}>
                     {app.payment}
@@ -40,11 +40,11 @@ export default function Applications({ applications }) {
                 </td>
                 <td className="px-6 py-4">
                   <span className={`px-4 py-1.5 rounded-full inline-flex items-center justify-center font-bold text-xs ${
-                    app.status === 'Approved' ? 'bg-[#E6F9F0] text-[#00A962]' :
-                    app.status === 'Pending' ? 'bg-[#FFEAD6] text-[#FF8303]' :
+                    app?.status === 'Approved' ? 'bg-[#E6F9F0] text-[#00A962]' :
+                    app?.status === 'Pending' ? 'bg-[#FFEAD6] text-[#FF8303]' :
                     'bg-[#FFEAD6] text-[#FF8303]'
                   }`}>
-                    {app.status}
+                    {app?.status}
                   </span>
                 </td>
                 <td className="px-6 py-4">
@@ -74,28 +74,28 @@ export default function Applications({ applications }) {
             </div>
             
             <div>
-              <h4 className="text-sm font-bold text-[#041A40]">{app.service}</h4>
+              <h4 className="text-sm font-bold text-[#041A40]">{app?.service}</h4>
             </div>
 
             <div className="flex justify-between items-center pt-2.5 border-t border-gray-50 text-xs">
               <div>
                 <span className="block text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-0.5">Submitted</span>
-                <span className="font-bold text-gray-600">{app.submitted}</span>
+                <span className="font-bold text-gray-600">{app?.submitted}</span>
               </div>
               <div className="flex items-center space-x-2">
                 <span className={`px-3 py-1 rounded-full font-bold text-[10px] ${
-                  app.payment === 'Success' ? 'bg-[#E6F9F0] text-[#00A962]' :
-                  app.payment === 'Pending' ? 'bg-[#FFEAD6] text-[#FF8303]' :
+                  app?.payment === 'Success' ? 'bg-[#E6F9F0] text-[#00A962]' :
+                  app?.payment === 'Pending' ? 'bg-[#FFEAD6] text-[#FF8303]' :
                   'bg-[#FEECEB] text-[#D93025]'
                 }`}>
-                  {app.payment}
+                  {app?.payment}
                 </span>
                 <span className={`px-3 py-1 rounded-full font-bold text-[10px] ${
-                  app.status === 'Approved' ? 'bg-[#E6F9F0] text-[#00A962]' :
-                  app.status === 'Pending' ? 'bg-[#FFEAD6] text-[#FF8303]' :
+                  app?.status === 'Approved' ? 'bg-[#E6F9F0] text-[#00A962]' :
+                  app?.status === 'Pending' ? 'bg-[#FFEAD6] text-[#FF8303]' :
                   'bg-[#FFEAD6] text-[#FF8303]'
                 }`}>
-                  {app.status}
+                  {app?.status}
                 </span>
               </div>
             </div>

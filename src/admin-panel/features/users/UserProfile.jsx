@@ -14,54 +14,49 @@ import StatCard from "../../../shared/components/StatCard";
 import PersonalInfo from "./components/PersonalInfo";
 import Applications from "./components/Applications";
 import Payments from "./components/Payments";
+import {
+  useGetUserByIdQuery,
+  useUserBlockMutation,
+} from "../../../redux/api/usersApi";
 
 export default function UserProfile() {
   const navigate = useNavigate();
   const { id } = useParams(); // Could be used to fetch actual user data
 
+  const { data: userDetails, isLoading } = useGetUserByIdQuery(id);
+  const [userBlock, { isLoading: isBlocking }] = useUserBlockMutation();
+
+  const user = userDetails?.user;
+  const applications = userDetails?.appilications || [];
+
+  // console.log("User Details:", userDetails);
+
+  const isActive = !user?.isBlock;
+
   const [activeTab, setActiveTab] = useState("Personal Info");
 
-  // Mock data based on the design
-  const user = {
-    id: id || "12345",
-    name: "Aarav Sharma",
-    joinedOn: "2026-Feb-02",
-    phone: "+91 8585858585",
-    contactNo: "+91 85858 14141",
-    address: "Golden City center, Nashik, Maharashtra 431008",
-    status: true,
+  const formatDate = (date) => {
+    if (!date) return "N/A";
+
+    return new Date(date).toLocaleDateString("en-GB", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+    });
   };
 
-  const applications = [
-    {
-      id: "APP-1234567",
-      service: "Aadhaar Certificate",
-      submitted: "12/05/2026",
-      payment: "Pending",
-      status: "Pending",
-    },
-    {
-      id: "APP-1234567",
-      service: "Aadhaar Certificate",
-      submitted: "12/05/2026",
-      payment: "Success",
-      status: "Approved",
-    },
-    {
-      id: "APP-1234567",
-      service: "Aadhaar Certificate",
-      submitted: "12/05/2026",
-      payment: "Failed",
-      status: "Pending",
-    },
-    {
-      id: "APP-1234567",
-      service: "Aadhaar Certificate",
-      submitted: "12/05/2026",
-      payment: "Pending",
-      status: "Pending",
-    },
-  ];
+  const handleUserBlock = async () => {
+    try {
+      const res = await userBlock(user._id).unwrap();
+      console.log(res);
+
+      // Agar react-hot-toast use kar rahi ho
+      // toast.success(res.message);
+    } catch (err) {
+      console.error(err);
+      // toast.error(err?.data?.message || "Something went wrong");
+    }
+  };
 
   const payments = [
     {
@@ -111,26 +106,38 @@ export default function UserProfile() {
           </button>
           <div>
             <h1 className="text-2xl md:text-3xl font-bold text-[#041A40] mb-1 flex items-center space-x-3">
-              <span>{user.name}</span>
+              <span>{user?.name || "N/A"}</span>
             </h1>
             <p className="text-gray-600 font-bold text-xs md:text-sm uppercase tracking-wide">
-              USER-{user.id} <span className="mx-1">|</span> Joined on{" "}
-              {user.joinedOn} <span className="mx-1">|</span> {user.phone}
+              USER-{user?._id?.slice(-8).toUpperCase()}{" "}
+              <span className="mx-1">|</span> Joined on{" "}
+              {formatDate(user?.createdAt)} <span className="mx-1">|</span>{" "}
+              {user?.mobileNumber}
             </p>
           </div>
         </div>
 
-        {/* Right Actions */} 
+        {/* Right Actions */}
         <div className="flex items-center space-x-4">
           {/* Status Toggle */}
+
           <button
-            className={`w-12 h-6 shrink-0 rounded-full relative transition-colors duration-200 focus:outline-none border-2 ${user.status ? "bg-[#041A40] border-[#041A40]" : "bg-gray-100 border-gray-300"}`}
+            onClick={handleUserBlock}
+            disabled={isBlocking}
+            className={`w-12 h-6 shrink-0 rounded-full relative transition-colors duration-200 border-2 ${
+              isActive
+                ? "bg-[#041A40] border-[#041A40]"
+                : "bg-gray-100 border-gray-300"
+            } ${isBlocking ? "opacity-50 cursor-not-allowed" : ""}`}
           >
             <span
-              className={`absolute top-[2px] left-[2px] w-4 h-4 rounded-full transition-transform duration-200 ${user.status ? "bg-white translate-x-6" : "bg-gray-400 translate-x-0"}`}
-            ></span>
-          </button> 
-
+              className={`absolute top-[2px] left-[2px] w-4 h-4 rounded-full transition-transform duration-200 ${
+                isActive
+                  ? "bg-white translate-x-6"
+                  : "bg-gray-400 translate-x-0"
+              }`}
+            />
+          </button>
           {/* WhatsApp Button */}
           <button className="flex items-center justify-center transition-transform hover:scale-105 active:scale-95 focus:outline-none">
             <img
@@ -139,7 +146,6 @@ export default function UserProfile() {
               className="w-10 h-10 object-contain"
             />
           </button>
-
           {/* Export Button */}
           <button className="flex items-center space-x-2 bg-[#FF8303] hover:bg-[#e67400] text-white px-5 py-2.5 rounded-full font-bold shadow-sm shadow-orange-500/20 transition-all active:scale-95">
             <Download className="w-5 h-5" />
