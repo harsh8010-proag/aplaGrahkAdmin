@@ -38,10 +38,51 @@ export default function ApplicationDetails() {
   const { id } = useParams();
   const [activeTab, setActiveTab] = useState("personal");
   const [updatingId, setUpdatingId] = useState(null);
+  const [chatMessage, setChatMessage] = useState("");
+
+  const ADMIN_WHATSAPP_NUMBER = "917769914777"; // fixed admin WhatsApp number
 
   const { data, isLoading, error } = useGetApplicationByIdQuery(id);
   const [updateApplicationDocStatus] = useUpdateApplicationDocStatusMutation();
   const [updateApplicationStatus] = useUpdateApplicationStatusMutation();
+
+  // Header WhatsApp icon
+  const handleWhatsAppClick = () => {
+    const applicantName =
+      formData.applicantName || formData.headOfFamily || "N/A";
+
+    const message = `Hi, sharing details for Application ${app._id
+      ?.slice(-8)
+      .toUpperCase()}.
+Applicant: ${applicantName}
+Service ID: ${app.serviceId}
+Status: ${app.status}
+Submitted On: ${formatDate(app.createdAt)}`;
+
+    const whatsappUrl = `https://wa.me/${ADMIN_WHATSAPP_NUMBER}?text=${encodeURIComponent(
+      message,
+    )}`;
+
+    window.open(whatsappUrl, "_blank", "noopener,noreferrer");
+  };
+
+  // Send Message box ka WhatsApp icon
+  const handleSendMessageWhatsApp = () => {
+    const applicantName =
+      formData.applicantName || formData.headOfFamily || "N/A";
+
+    const message = chatMessage.trim()
+      ? `Regarding Application ${app._id?.slice(-8).toUpperCase()} (${applicantName}):
+${chatMessage.trim()}`
+      : `Regarding Application ${app._id?.slice(-8).toUpperCase()} (${applicantName}).`;
+
+    const whatsappUrl = `https://wa.me/${ADMIN_WHATSAPP_NUMBER}?text=${encodeURIComponent(
+      message,
+    )}`;
+
+    window.open(whatsappUrl, "_blank", "noopener,noreferrer");
+    setChatMessage("");
+  };
 
   // console.log("Application Detail:", data);
 
@@ -194,7 +235,10 @@ export default function ApplicationDetails() {
 
         {/* Top Right Actions */}
         <div className="flex items-center space-x-3 w-full xl:w-auto justify-end">
-          <button className="flex items-center justify-center hover:scale-105 active:scale-95 transition-transform focus:outline-none shrink-0">
+          <button
+            onClick={handleWhatsAppClick}
+            className="flex items-center justify-center hover:scale-105 active:scale-95 transition-transform focus:outline-none shrink-0"
+          >
             <img
               src="/Icons/whatsapp icon.svg"
               alt="WhatsApp"
@@ -420,10 +464,18 @@ export default function ApplicationDetails() {
                 <div className="mt-8 relative w-full">
                   <input
                     type="text"
+                    value={chatMessage}
+                    onChange={(e) => setChatMessage(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") handleSendMessageWhatsApp();
+                    }}
                     placeholder="Send Message"
                     className="w-full pl-4 pr-12 py-3.5 bg-white border border-gray-200 rounded-2xl text-sm focus:outline-none focus:border-[#FF8303]"
                   />
-                  <button className="absolute right-3 top-1/2 -translate-y-1/2 hover:scale-105 active:scale-95 transition-transform focus:outline-none">
+                  <button
+                    onClick={handleSendMessageWhatsApp}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 hover:scale-105 active:scale-95 transition-transform focus:outline-none"
+                  >
                     <img
                       src="/Icons/whatsapp icon.svg"
                       alt="WhatsApp"

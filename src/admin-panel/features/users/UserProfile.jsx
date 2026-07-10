@@ -59,6 +59,19 @@ export default function UserProfile() {
     }
   };
 
+  const handleWhatsAppClick = () => {
+  const adminNumber = "917769914777"; // admin ka WhatsApp number, 91 = India code
+
+  const message = `Hi, sharing details for USER-${user?._id?.slice(-8).toUpperCase()}.
+Name: ${user?.name || "N/A"}
+Mobile: ${user?.mobileNumber || "N/A"}
+Joined: ${formatDate(user?.createdAt)}`;
+
+  const whatsappUrl = `https://wa.me/${adminNumber}?text=${encodeURIComponent(message)}`;
+
+  window.open(whatsappUrl, "_blank", "noopener,noreferrer");
+};
+
   const payments = [
     {
       id: "TXN-1234567",
@@ -109,12 +122,12 @@ export default function UserProfile() {
   ).length;
 
   const totalRevenue = payments
-  .filter((payment) => payment.payment === "Success")
-  .reduce(
-    (total, payment) =>
-      total + Number(String(payment.amount).replace(/[₹,]/g, "")),
-    0
-  );
+    .filter((payment) => payment.payment === "Success")
+    .reduce(
+      (total, payment) =>
+        total + Number(String(payment.amount).replace(/[₹,]/g, "")),
+      0,
+    );
 
   return (
     <div className="w-auto lg:-mx-4 xl:-mx-8 space-y-6">
@@ -162,7 +175,12 @@ export default function UserProfile() {
             />
           </button>
           {/* WhatsApp Button */}
-          <button className="flex items-center justify-center transition-transform hover:scale-105 active:scale-95 focus:outline-none">
+          {/* WhatsApp Button */}
+          <button
+            onClick={handleWhatsAppClick}
+            disabled={!user?.mobileNumber}
+            className="flex items-center justify-center transition-transform hover:scale-105 active:scale-95 focus:outline-none disabled:opacity-40 disabled:cursor-not-allowed"
+          >
             <img
               src="/Icons/whatsapp icon.svg"
               alt="WhatsApp"
@@ -184,7 +202,7 @@ export default function UserProfile() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
           title="Total Applications"
-           value={totalApplications}
+          value={totalApplications}
           icon={FileText}
           iconBgColor="bg-[#FF8303]"
           trend="+30%"
@@ -200,7 +218,7 @@ export default function UserProfile() {
         />
         <StatCard
           title="Rejected Applications"
-        value={rejectedApplications}
+          value={rejectedApplications}
           icon={XCircle}
           iconBgColor="bg-red-500"
           trend="+30%"
