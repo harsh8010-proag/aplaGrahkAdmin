@@ -1,5 +1,6 @@
 import { Link, useNavigate } from "react-router-dom";
 import React, { useState } from "react";
+import { FiLogOut } from "react-icons/fi";
 import { useGetAdminQuery } from "../../redux/api/authApi";
 import DynamicInputModal from "../../shared/models/addServiceModel";
 
@@ -24,6 +25,12 @@ export default function Navbar({ onLogoClick }) {
     const updatedFields = [...fields];
     updatedFields[index] = value;
     setFields(updatedFields);
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem("admin_token"); 
+    localStorage.removeItem("user_data")
+    navigate("/login", { replace: true });
   };
 
   return (
@@ -51,17 +58,37 @@ export default function Navbar({ onLogoClick }) {
           <span className="hidden md:inline">Quick Add Service</span>
         </button>
 
-        <div className="flex items-center space-x-2 md:space-x-3 pl-2 md:pl-4">
+        <div className="relative group flex items-center space-x-2 md:space-x-3 pl-2 md:pl-4 cursor-pointer">
           <div className="w-9 h-9 md:w-10 md:h-10 bg-[#041A40] rounded-full flex items-center justify-center text-white font-bold text-xs md:text-sm uppercase">
-            {adminData?.admin?.name?.substring(0, 2) || adminData?.admin?.email?.substring(0, 2) || "AD"}
+            {adminData?.admin?.name?.substring(0, 2) ||
+              adminData?.admin?.email?.substring(0, 2) ||
+              "AD"}
           </div>
+
           <div className="hidden sm:block pr-2">
             <div className="font-bold text-[#041A40] text-sm leading-tight">
-              {adminData?.admin?.name || adminData?.admin?.email?.split('@')[0] || "Administrator"}
+              {adminData?.admin?.name ||
+                adminData?.admin?.email?.split("@")[0] ||
+                "Administrator"}
             </div>
             <div className="text-gray-500 text-xs font-bold">
               {adminData?.admin?.email || "Admin"}
             </div>
+          </div>
+
+          {/* Dropdown */}
+          <div
+            className="absolute right-0 top-full mt-2 w-44 bg-white rounded-lg shadow-xl border border-gray-200
+    opacity-0 invisible group-hover:opacity-100 group-hover:visible
+    transition-all duration-200 z-50"
+          >
+            <button
+              onClick={handleLogout}
+              className="w-full flex items-center gap-2 px-4 py-3 text-sm text-red-600 hover:bg-red-50 rounded-lg"
+            >
+              <FiLogOut className="text-lg" />
+              Logout
+            </button>
           </div>
         </div>
       </div>

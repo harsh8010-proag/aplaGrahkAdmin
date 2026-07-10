@@ -9,12 +9,15 @@ import {
   useUserBlockMutation,
   useUserDeleteMutation,
 } from "../../../redux/api/usersApi";
+import { useState } from "react";
+import * as XLSX from "xlsx";
 
 export default function Users() {
   const navigate = useNavigate();
   const { data, isLoading, isError } = useGetAllUsersQuery();
   const [userBlock, { isLoading: isBlocking }] = useUserBlockMutation();
   const [userDelete, { isLoading: deleteLoding }] = useUserDeleteMutation();
+  const [search, setSearch] = useState("");
 
   const users = data?.users || [];
 
@@ -64,6 +67,30 @@ export default function Users() {
     });
   };
 
+  const handleExport = () => {
+  const exportData = filterUser.map((user) => ({
+    Name: user.name || "N/A",
+    Mobile: user.mobileNumber || user.phone || "N/A",
+    Address: user.address || "N/A",
+    Taluka: user.taluka || "N/A",
+    District: user.district || "N/A",
+    Applications: user.applicationCount || 0,
+    Status: user.isBlock ? "Blocked" : "Active",
+    JoinedOn: formatDate(user.createdAt),
+  }));
+
+  const worksheet = XLSX.utils.json_to_sheet(exportData);
+
+  const workbook = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(workbook, worksheet, "Users");
+
+  XLSX.writeFile(workbook, "Users.xlsx");
+};
+
+  const filterUser = users.filter((user) => {
+    return user.name.toLowerCase().includes(search.toLowerCase());
+  });
+
   const renderRow = (user, idx) => {
     const id = user._id || user.id;
     const name = user.name || "Unnamed";
@@ -80,6 +107,7 @@ export default function Users() {
     const isActive = !user.isBlock;
     const address1 = user.address || "Not Provided";
     const address2 = [user.taluka, user.district].filter(Boolean).join(", ");
+
     return (
       <tr
         key={id}
@@ -347,7 +375,7 @@ export default function Users() {
         </div>
 
         {/* Export Button */}
-        <Button icon={Download}>Export</Button>
+        <Button icon={Download} onClick={handleExport}>Export</Button>
       </div>
 
       {/* Table Section */}
@@ -358,7 +386,11 @@ export default function Users() {
         {/* Table Toolbar */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 space-y-4 sm:space-y-0">
           <h2 className="text-xl font-bold text-[#041A40]">All Users</h2>
-          <SearchInput placeholder="Search user" showFilter={false} />
+          <SearchInput
+            placeholder="Search user"
+            showFilter={false}
+            onChange={(e) => setSearch(e.target.value)}
+          />
         </div>
 
         {isLoading ? (
@@ -376,7 +408,7 @@ export default function Users() {
         ) : (
           <Table
             columns={columns}
-            data={users}
+            data={filterUser}
             renderRow={renderRow}
             renderMobileCard={renderMobileCard}
           />
