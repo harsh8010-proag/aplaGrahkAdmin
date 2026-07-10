@@ -61,14 +61,13 @@ export default function Sidebar({ onNavigate }) {
           >
             {({ isActive }) => (
               <>
-                {typeof item.icon === "string" ? (
-                  <img
-                    src={item.icon}
-                    alt={item.name}
-                    className={`w-6 h-6 lg:w-8 lg:h-8 mb-1 lg:mb-2 object-contain transition-all ${
-                      isActive ? "sidebar-icon-active" : ""
-                    }`}
-                  />
+               {typeof item.icon === "string" ? (
+  <span
+    className={`sidebar-icon w-6 h-6 lg:w-8 lg:h-8 mb-1 lg:mb-2 transition-all ${
+      isActive ? "sidebar-icon-active" : ""
+    }`}
+    style={{ "--icon-url": `url(${item.icon})` }}
+  />
                 ) : (
                   <item.icon
                     className={`w-6 h-6 lg:w-8 lg:h-8 mb-1 lg:mb-2 ${

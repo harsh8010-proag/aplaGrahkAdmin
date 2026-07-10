@@ -29,6 +29,18 @@ body {
 }
 
 /* Turn sidebar icon orange when active */
+.sidebar-icon {
+  width: 24px;
+  height: 24px;
+  background-color: #FFFFFF; /* default color */
+  -webkit-mask-image: var(--icon-url);
+  mask-image: var(--icon-url);
+  -webkit-mask-size: contain;
+  mask-size: contain;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+}
+
 .sidebar-icon-active {
-  filter: brightness(0) saturate(100%) invert(52%) sepia(90%) saturate(2000%) hue-rotate(360deg) brightness(98%) contrast(95%);
+  background-color: #F97316; /* active color */
 }
