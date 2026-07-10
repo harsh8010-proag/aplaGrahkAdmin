@@ -18,6 +18,7 @@ import {
   useGetUserByIdQuery,
   useUserBlockMutation,
 } from "../../../redux/api/usersApi";
+import { exportUserReport } from "../../../utils/exportPDf";
 
 export default function UserProfile() {
   const navigate = useNavigate();
@@ -93,6 +94,28 @@ export default function UserProfile() {
     },
   ];
 
+  const handleExport = () => {
+    exportUserReport(user, applications, payments);
+  };
+
+  const totalApplications = applications.length;
+
+  const approvedApplications = applications.filter(
+    (app) => app.status === "Approved",
+  ).length;
+
+  const rejectedApplications = applications.filter(
+    (app) => app.status === "Rejected",
+  ).length;
+
+  const totalRevenue = payments
+  .filter((payment) => payment.payment === "Success")
+  .reduce(
+    (total, payment) =>
+      total + Number(String(payment.amount).replace(/[₹,]/g, "")),
+    0
+  );
+
   return (
     <div className="w-auto lg:-mx-4 xl:-mx-8 space-y-6">
       {/* Header Area */}
@@ -112,7 +135,7 @@ export default function UserProfile() {
               USER-{user?._id?.slice(-8).toUpperCase()}{" "}
               <span className="mx-1">|</span> Joined on{" "}
               {formatDate(user?.createdAt)} <span className="mx-1">|</span>{" "}
-              {user?.mobileNumber}
+              {user?.mobileNumber || "N/A"}
             </p>
           </div>
         </div>
@@ -147,7 +170,10 @@ export default function UserProfile() {
             />
           </button>
           {/* Export Button */}
-          <button className="flex items-center space-x-2 bg-[#FF8303] hover:bg-[#e67400] text-white px-5 py-2.5 rounded-full font-bold shadow-sm shadow-orange-500/20 transition-all active:scale-95">
+          <button
+            className="flex items-center space-x-2 bg-[#FF8303] hover:bg-[#e67400] text-white px-5 py-2.5 rounded-full font-bold shadow-sm shadow-orange-500/20 transition-all active:scale-95"
+            onClick={handleExport}
+          >
             <Download className="w-5 h-5" />
             <span>Export</span>
           </button>
@@ -158,7 +184,7 @@ export default function UserProfile() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
           title="Total Applications"
-          value="12"
+           value={totalApplications}
           icon={FileText}
           iconBgColor="bg-[#FF8303]"
           trend="+30%"
@@ -166,7 +192,7 @@ export default function UserProfile() {
         />
         <StatCard
           title="Approved Applications"
-          value="1200"
+          value={approvedApplications}
           icon={CheckCircle2}
           iconBgColor="bg-[#00A3FF]"
           trend="+30%"
@@ -174,7 +200,7 @@ export default function UserProfile() {
         />
         <StatCard
           title="Rejected Applications"
-          value="1200"
+        value={rejectedApplications}
           icon={XCircle}
           iconBgColor="bg-red-500"
           trend="+30%"
@@ -182,7 +208,7 @@ export default function UserProfile() {
         />
         <StatCard
           title="Total Revenue"
-          value="₹48.62L"
+          value={`₹${totalRevenue}`}
           icon={Briefcase}
           iconBgColor="bg-[#041A40]"
           trend="+30%"

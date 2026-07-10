@@ -77,19 +77,7 @@ export default function Navbar({ onLogoClick }) {
           </div>
 
           {/* Dropdown */}
-          <div
-            className="absolute right-0 top-full mt-2 w-44 bg-white rounded-lg shadow-xl border border-gray-200
-    opacity-0 invisible group-hover:opacity-100 group-hover:visible
-    transition-all duration-200 z-50"
-          >
-            <button
-              onClick={handleLogout}
-              className="w-full flex items-center gap-2 px-4 py-3 text-sm text-red-600 hover:bg-red-50 rounded-lg"
-            >
-              <FiLogOut className="text-lg" />
-              Logout
-            </button>
-          </div>
+         
         </div>
       </div>
 
