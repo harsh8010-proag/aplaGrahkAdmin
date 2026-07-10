@@ -87,9 +87,11 @@ export default function Users() {
   XLSX.writeFile(workbook, "Users.xlsx");
 };
 
-  const filterUser = users.filter((user) => {
-    return user.name.toLowerCase().includes(search.toLowerCase());
-  });
+ const filterUser = users.filter((user) => {
+  return (user.name || "")
+    .toLowerCase()
+    .includes(search.toLowerCase());
+});
 
   const renderRow = (user, idx) => {
     const id = user._id || user.id;
