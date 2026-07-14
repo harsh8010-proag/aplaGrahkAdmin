@@ -46,43 +46,53 @@ export default function ApplicationDetails() {
   const [updateApplicationDocStatus] = useUpdateApplicationDocStatusMutation();
   const [updateApplicationStatus] = useUpdateApplicationStatusMutation();
 
+  console.log("Full API Reponse:", data);
+  
+
   // Header WhatsApp icon
-  const handleWhatsAppClick = () => {
-    const applicantName =
-      formData.applicantName || formData.headOfFamily || "N/A";
+  // ADMIN_WHATSAPP_NUMBER wala const hata do, ab zarurat nahi
 
-    const message = `Hi, sharing details for Application ${app._id
-      ?.slice(-8)
-      .toUpperCase()}.
-Applicant: ${applicantName}
-Service ID: ${app.serviceId}
-Status: ${app.status}
-Submitted On: ${formatDate(app.createdAt)}`;
+// Header WhatsApp icon
+const handleWhatsAppClick = () => {
+  const number = app?.formData?.mobileNumber;
 
-    const whatsappUrl = `https://wa.me/${ADMIN_WHATSAPP_NUMBER}?text=${encodeURIComponent(
-      message,
-    )}`;
+  if (!number) {
+    alert("Mobile number not found");
+    return;
+  }
 
-    window.open(whatsappUrl, "_blank", "noopener,noreferrer");
-  };
+  const finalNumber = number.startsWith("91")
+    ? number
+    : `91${number}`;
 
-  // Send Message box ka WhatsApp icon
-  const handleSendMessageWhatsApp = () => {
-    const applicantName =
-      formData.applicantName || formData.headOfFamily || "N/A";
+  window.open(
+    `https://wa.me/${finalNumber}`,
+    "_blank",
+    "noopener,noreferrer"
+  );
+};
+// Send Message box ka WhatsApp icon
+const handleSendMessageWhatsApp = () => {
+  const number = app?.formData?.mobileNumber;
 
-    const message = chatMessage.trim()
-      ? `Regarding Application ${app._id?.slice(-8).toUpperCase()} (${applicantName}):
-${chatMessage.trim()}`
-      : `Regarding Application ${app._id?.slice(-8).toUpperCase()} (${applicantName}).`;
+  if (!number) {
+    alert("Mobile number not found");
+    return;
+  }
 
-    const whatsappUrl = `https://wa.me/${ADMIN_WHATSAPP_NUMBER}?text=${encodeURIComponent(
-      message,
-    )}`;
+  const finalNumber = number.startsWith("91")
+    ? number
+    : `91${number}`;
 
-    window.open(whatsappUrl, "_blank", "noopener,noreferrer");
-    setChatMessage("");
-  };
+  const message = chatMessage.trim();
+
+  const url = message
+    ? `https://wa.me/${finalNumber}?text=${encodeURIComponent(message)}`
+    : `https://wa.me/${finalNumber}`;
+
+  window.open(url, "_blank", "noopener,noreferrer");
+  setChatMessage("");
+};
 
   // console.log("Application Detail:", data);
 

@@ -36,13 +36,13 @@ export default function Applications({ applications }) {
                 className={`border-b border-gray-100 hover:bg-gray-50 transition-colors ${idx === applications.length - 1 ? "border-none" : ""}`}
               >
                 <td className="px-6 py-4 font-bold text-gray-500 whitespace-nowrap">
-                  {app?.id}
+                  {app?.id || "N/A"}
                 </td>
                 <td className="px-6 py-4 font-bold text-gray-900 whitespace-nowrap">
-                  {app?.service}
+                  {app?.service || "N/A"}
                 </td>
                 <td className="px-6 py-4 font-bold text-gray-500 whitespace-nowrap">
-                  {app?.submitted}
+                  {app?.submitted || "N/A"}
                 </td>
                 <td className="px-6 py-4">
                   <span
@@ -54,7 +54,7 @@ export default function Applications({ applications }) {
                           : "bg-[#FEECEB] text-[#D93025]"
                     }`}
                   >
-                    {app.payment}
+                    {app.payment || "N/A"}
                   </span>
                 </td>
                 <td className="px-6 py-4">

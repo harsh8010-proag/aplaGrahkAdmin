@@ -59,15 +59,18 @@ export default function UserProfile() {
     }
   };
 
-  const handleWhatsAppClick = () => {
-  const adminNumber = "917769914777"; // admin ka WhatsApp number, 91 = India code
+ const handleWhatsAppClick = () => {
+  if (!user?.mobileNumber) return;
 
-  const message = `Hi, sharing details for USER-${user?._id?.slice(-8).toUpperCase()}.
-Name: ${user?.name || "N/A"}
-Mobile: ${user?.mobileNumber || "N/A"}
-Joined: ${formatDate(user?.createdAt)}`;
+  // Number ko clean karo — sirf digits rakho
+  let number = String(user.mobileNumber).replace(/\D/g, "");
 
-  const whatsappUrl = `https://wa.me/${adminNumber}?text=${encodeURIComponent(message)}`;
+  // Agar number me already country code nahi hai (10 digit hai), 91 add karo
+  if (number.length === 10) {
+    number = `91${number}`;
+  }
+
+  const whatsappUrl = `https://wa.me/${number}`;
 
   window.open(whatsappUrl, "_blank", "noopener,noreferrer");
 };

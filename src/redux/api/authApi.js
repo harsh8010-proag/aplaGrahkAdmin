@@ -33,7 +33,14 @@ export const authApi = createApi({
         method: 'GET',
       }),
     }),
+    getDashbaord: builder.query({
+      query: () => ({
+        url: "v1/admin/get-dashboard",
+        method: 'GET'
+      })
+
+    })
   }),
 });
 
-export const { useLoginMutation, useLogoutMutation, useGetAdminQuery, useGetAdminUsersQuery } = authApi;
+export const { useLoginMutation, useLogoutMutation, useGetAdminQuery, useGetAdminUsersQuery, useGetDashbaordQuery } = authApi;
