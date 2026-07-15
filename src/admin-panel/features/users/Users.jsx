@@ -18,8 +18,14 @@ export default function Users() {
   const [userBlock, { isLoading: isBlocking }] = useUserBlockMutation();
   const [userDelete, { isLoading: deleteLoding }] = useUserDeleteMutation();
   const [search, setSearch] = useState("");
-
+  const [currentPage, setCurrentPage] = useState(1);
+  const usersPerPage = 5;
   const users = data?.users || [];
+
+  // Newest user pehle dikhane ke liye
+  const sortedUsers = [...users].sort(
+    (a, b) => new Date(b.createdAt) - new Date(a.createdAt),
+  );
 
   const handleDeleteUser = async (id) => {
     const confirmDelete = window.confirm(
@@ -68,30 +74,39 @@ export default function Users() {
   };
 
   const handleExport = () => {
-  const exportData = filterUser.map((user) => ({
-    Name: user.name || "N/A",
-    Mobile: user.mobileNumber || user.phone || "N/A",
-    Address: user.address || "N/A",
-    Taluka: user.taluka || "N/A",
-    District: user.district || "N/A",
-    Applications: user.applicationCount || 0,
-    Status: user.isBlock ? "Blocked" : "Active",
-    JoinedOn: formatDate(user.createdAt),
-  }));
+    const exportData = filterUser.map((user) => ({
+      Name: user.name || "N/A",
+      Mobile: user.mobileNumber || user.phone || "N/A",
+      Address: user.address || "N/A",
+      Taluka: user.taluka || "N/A",
+      District: user.district || "N/A",
+      Applications: user.applicationCount || 0,
+      Status: user.isBlock ? "Blocked" : "Active",
+      JoinedOn: formatDate(user.createdAt),
+    }));
 
-  const worksheet = XLSX.utils.json_to_sheet(exportData);
+    const worksheet = XLSX.utils.json_to_sheet(exportData);
 
-  const workbook = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(workbook, worksheet, "Users");
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Users");
 
-  XLSX.writeFile(workbook, "Users.xlsx");
-};
+    XLSX.writeFile(workbook, "Users.xlsx");
+  };
 
- const filterUser = users.filter((user) => {
-  return (user.name || "")
-    .toLowerCase()
-    .includes(search.toLowerCase());
-});
+  const filterUser = sortedUsers.filter((user) => {
+    return (user.name || "").toLowerCase().includes(search.toLowerCase());
+  });
+
+  // Pagination calculations
+  const totalPages = Math.ceil(filterUser.length / usersPerPage);
+  const indexOfLastUser = currentPage * usersPerPage;
+  const indexOfFirstUser = indexOfLastUser - usersPerPage;
+  const paginatedUsers = filterUser.slice(indexOfFirstUser, indexOfLastUser);
+
+  const handlePageChange = (page) => {
+    if (page < 1 || page > totalPages) return;
+    setCurrentPage(page);
+  };
 
   const renderRow = (user, idx) => {
     const id = user._id || user.id;
@@ -377,7 +392,9 @@ export default function Users() {
         </div>
 
         {/* Export Button */}
-        <Button icon={Download} onClick={handleExport}>Export</Button>
+        <Button icon={Download} onClick={handleExport}>
+          Export
+        </Button>
       </div>
 
       {/* Table Section */}
@@ -391,7 +408,10 @@ export default function Users() {
           <SearchInput
             placeholder="Search user"
             showFilter={false}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={(e) => {
+              setSearch(e.target.value);
+              setCurrentPage(1); // search karte hi page 1 pe wapas
+            }}
           />
         </div>
 
@@ -410,12 +430,54 @@ export default function Users() {
         ) : (
           <Table
             columns={columns}
-            data={filterUser}
+            data={paginatedUsers}
             renderRow={renderRow}
             renderMobileCard={renderMobileCard}
           />
         )}
       </div>
+
+      {!isLoading && !isError && filterUser.length > 0 && (
+        <div className="flex flex-col sm:flex-row justify-between items-center mt-6 space-y-4 sm:space-y-0">
+          <p className="text-sm text-gray-500 font-bold">
+            Showing {indexOfFirstUser + 1}-
+            {Math.min(indexOfLastUser, filterUser.length)} of{" "}
+            {filterUser.length} users
+          </p>
+
+          <div className="flex items-center space-x-2">
+            <button
+              onClick={() => handlePageChange(currentPage - 1)}
+              disabled={currentPage === 1}
+              className="px-3 py-1.5 rounded-lg border border-gray-200 text-sm font-bold text-[#041A40] disabled:opacity-40 disabled:cursor-not-allowed hover:bg-gray-100"
+            >
+              Prev
+            </button>
+
+            {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+              <button
+                key={page}
+                onClick={() => handlePageChange(page)}
+                className={`px-3 py-1.5 rounded-lg text-sm font-bold ${
+                  currentPage === page
+                    ? "bg-[#FF8303] text-white"
+                    : "border border-gray-200 text-[#041A40] hover:bg-gray-100"
+                }`}
+              >
+                {page}
+              </button>
+            ))}
+
+            <button
+              onClick={() => handlePageChange(currentPage + 1)}
+              disabled={currentPage === totalPages}
+              className="px-3 py-1.5 rounded-lg border border-gray-200 text-sm font-bold text-[#041A40] disabled:opacity-40 disabled:cursor-not-allowed hover:bg-gray-100"
+            >
+              Next
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

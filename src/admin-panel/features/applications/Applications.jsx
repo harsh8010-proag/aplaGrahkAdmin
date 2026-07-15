@@ -113,6 +113,20 @@ export default function Applications() {
   const { data: allApplications, isLoading } = useGetAplicationsQuery();
   const [updateApplicationStatus] = useUpdateApplicationStatusMutation();
   const [updatingId, setUpdatingId] = useState(null);
+  // const [statusFilter, setStatusFilter] = useState("All Status");
+  // const [searchTerm, setSearchTerm] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const applicationsPerPage = 6;
+
+  const handleStatusFilterChange = (value) => {
+    setStatusFilter(value);
+    setCurrentPage(1);
+  };
+
+  const handleSearchChange = (e) => {
+    setSearchTerm(e.target.value);
+    setCurrentPage(1);
+  };
 
   const handleStatusUpdate = async (id, status) => {
     try {
@@ -128,7 +142,12 @@ export default function Applications() {
 
   // console.log("All Applications:", allApplications);
 
-  const applications = allApplications?.applications || [];
+const applications = allApplications?.applications || [];
+
+// Newest application pehle dikhane ke liye
+const sortedApplications = [...applications].sort(
+  (a, b) => new Date(b.createdAt) - new Date(a.createdAt),
+);
 
   const pendingCount = applications.filter(
     (app) => app.status === "Pending",
@@ -187,7 +206,7 @@ export default function Applications() {
   const [statusFilter, setStatusFilter] = useState("All Status");
   const [searchTerm, setSearchTerm] = useState("");
 
-  const filteredApplications = applications.filter((app) => {
+  const filteredApplications = sortedApplications.filter((app) => {
     const applicantName =
       app.formData?.applicantName ||
       app.formData?.headOfFamily ||
@@ -207,6 +226,21 @@ export default function Applications() {
 
     return matchesStatus && matchesSearch;
   });
+
+  const totalPages = Math.ceil(
+    filteredApplications.length / applicationsPerPage,
+  );
+  const indexOfLastApp = currentPage * applicationsPerPage;
+  const indexOfFirstApp = indexOfLastApp - applicationsPerPage;
+  const paginatedApplications = filteredApplications.slice(
+    indexOfFirstApp,
+    indexOfLastApp,
+  );
+
+  const handlePageChange = (page) => {
+    if (page < 1 || page > totalPages) return;
+    setCurrentPage(page);
+  };
 
   const handleExport = () => {
     if (filteredApplications.length === 0) {
@@ -611,6 +645,7 @@ export default function Applications() {
           <div className="flex flex-col sm:flex-row items-center space-y-3 sm:space-y-0 sm:space-x-4 w-full md:w-auto">
             <select
               value={statusFilter}
+              onChange={(e) => handleStatusFilterChange(e.target.value)}
               onChange={(e) => setStatusFilter(e.target.value)}
               className="w-full sm:w-auto px-4 py-2 text-sm font-bold text-gray-700 bg-white border border-gray-200 rounded-full focus:outline-none focus:ring-2 focus:ring-[#FF8303]/20 appearance-none pr-8 bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20width%3D%2212%22%20height%3D%228%22%20viewBox%3D%220%200%2012%208%20%22%20fill%3D%22none%22%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%3E%3Cpath%20d%3D%22M1%201.5L6%206.5L11%201.5%22%20stroke%3D%22%23666666%22%20stroke-width%3D%221.5%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22/%3E%3C/svg%3E')] bg-[length:12px_8px] bg-no-repeat bg-[position:calc(100%-1rem)_center]"
             >
@@ -626,7 +661,7 @@ export default function Applications() {
               showFilter={false}
               className="w-full sm:w-auto"
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              onChange={handleSearchChange}
             />
           </div>
         </div>
@@ -637,9 +672,10 @@ export default function Applications() {
             return (
               <button
                 key={tab.value}
-                onClick={() =>
-                  setStatusFilter(isActive ? "All Status" : tab.value)
-                }
+                onClick={() => {
+                  setStatusFilter(isActive ? "All Status" : tab.value);
+                  setCurrentPage(1);
+                }}
                 className="px-4 py-2 rounded-full text-sm font-bold transition-all border"
                 style={
                   isActive
@@ -661,17 +697,59 @@ export default function Applications() {
           })}
         </div>
 
-        {/* Using a custom table class to override the header background color inline, or just relying on Table component default. 
-            The reusable Table component uses bg-[#E1F5FE]. In the UI it's light cyan which is very close to E1F5FE. */}
         <div className="[&_thead]:bg-[#D4F4FA]">
           <Table
             columns={columns}
-            data={filteredApplications}
+            data={paginatedApplications}
             renderRow={renderRow}
             renderMobileCard={renderMobileCard}
             isLoading={isLoading}
           />
         </div>
+
+        {!isLoading && filteredApplications.length > 0 && (
+          <div className="flex flex-col sm:flex-row justify-between items-center mt-6 space-y-4 sm:space-y-0">
+            <p className="text-sm text-gray-500 font-bold">
+              Showing {indexOfFirstApp + 1}-
+              {Math.min(indexOfLastApp, filteredApplications.length)} of{" "}
+              {filteredApplications.length} applications
+            </p>
+
+            <div className="flex items-center space-x-2">
+              <button
+                onClick={() => handlePageChange(currentPage - 1)}
+                disabled={currentPage === 1}
+                className="px-3 py-1.5 rounded-lg border border-gray-200 text-sm font-bold text-[#041A40] disabled:opacity-40 disabled:cursor-not-allowed hover:bg-gray-100"
+              >
+                Prev
+              </button>
+
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map(
+                (page) => (
+                  <button
+                    key={page}
+                    onClick={() => handlePageChange(page)}
+                    className={`px-3 py-1.5 rounded-lg text-sm font-bold ${
+                      currentPage === page
+                        ? "bg-[#FF8303] text-white"
+                        : "border border-gray-200 text-[#041A40] hover:bg-gray-100"
+                    }`}
+                  >
+                    {page}
+                  </button>
+                ),
+              )}
+
+              <button
+                onClick={() => handlePageChange(currentPage + 1)}
+                disabled={currentPage === totalPages}
+                className="px-3 py-1.5 rounded-lg border border-gray-200 text-sm font-bold text-[#041A40] disabled:opacity-40 disabled:cursor-not-allowed hover:bg-gray-100"
+              >
+                Next
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

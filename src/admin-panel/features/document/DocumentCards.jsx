@@ -13,6 +13,8 @@ const DocumentCards = () => {
   // const [isAddDocumentModalOpen, setIsAddDocumentModalOpen] = useState(false);
   const [selectedDocument, setSelectedDocument] = useState(null);
   const [deleteDocumentType] = useDeleteDocumentTypeMutation();
+  const [currentPage, setCurrentPage] = useState(1);
+  const documentsPerPage = 8;
 
   const navigate = useNavigate();
 
@@ -21,6 +23,27 @@ const DocumentCards = () => {
     isLoading,
     isError,
   } = useGetAllDocumentTypeQuery();
+
+  const allDocuments = getAllDocumentType?.data || [];
+
+  // Newest document pehle dikhane ke liye
+  const sortedDocuments = [...allDocuments].sort(
+    (a, b) => new Date(b.createdAt) - new Date(a.createdAt),
+  );
+
+  // Pagination calculations
+  const totalPages = Math.ceil(sortedDocuments.length / documentsPerPage);
+  const indexOfLastDoc = currentPage * documentsPerPage;
+  const indexOfFirstDoc = indexOfLastDoc - documentsPerPage;
+  const paginatedDocuments = sortedDocuments.slice(
+    indexOfFirstDoc,
+    indexOfLastDoc,
+  );
+
+  const handlePageChange = (page) => {
+    if (page < 1 || page > totalPages) return;
+    setCurrentPage(page);
+  };
 
   const [toggleDocumentTypeStatus] = useToggleDocumentTypeStatusMutation();
 
@@ -116,13 +139,13 @@ const DocumentCards = () => {
         <div className="text-center text-red-500 py-10">
           Failed to load documents.
         </div>
-      ) : getAllDocumentType?.data?.length === 0 ? (
+      ) : allDocuments?.length === 0 ? (
         <div className="text-center text-gray-500 py-10">
           No documents found. Add one to get started.
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {getAllDocumentType?.data?.map((document) => (
+          {paginatedDocuments?.map((document) => (
             <div
               key={document.id}
               className="bg-[#D9D9D938] rounded-[20px] p-5 border border-gray-100 shadow-sm flex flex-col"
@@ -215,6 +238,49 @@ const DocumentCards = () => {
               </div>
             </div>
           ))}
+        </div>
+      )}
+
+      {/* Pagination */}
+      {!isLoading && !isError && sortedDocuments.length > 0 && (
+        <div className="flex flex-col sm:flex-row justify-between items-center mt-6 space-y-4 sm:space-y-0">
+          <p className="text-sm text-gray-500 font-bold">
+            Showing {indexOfFirstDoc + 1}-
+            {Math.min(indexOfLastDoc, sortedDocuments.length)} of{" "}
+            {sortedDocuments.length} documents
+          </p>
+
+          <div className="flex items-center space-x-2">
+            <button
+              onClick={() => handlePageChange(currentPage - 1)}
+              disabled={currentPage === 1}
+              className="px-3 py-1.5 rounded-lg border border-gray-200 text-sm font-bold text-[#041A40] disabled:opacity-40 disabled:cursor-not-allowed hover:bg-gray-100"
+            >
+              Prev
+            </button>
+
+            {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+              <button
+                key={page}
+                onClick={() => handlePageChange(page)}
+                className={`px-3 py-1.5 rounded-lg text-sm font-bold ${
+                  currentPage === page
+                    ? "bg-[#FF8303] text-white"
+                    : "border border-gray-200 text-[#041A40] hover:bg-gray-100"
+                }`}
+              >
+                {page}
+              </button>
+            ))}
+
+            <button
+              onClick={() => handlePageChange(currentPage + 1)}
+              disabled={currentPage === totalPages}
+              className="px-3 py-1.5 rounded-lg border border-gray-200 text-sm font-bold text-[#041A40] disabled:opacity-40 disabled:cursor-not-allowed hover:bg-gray-100"
+            >
+              Next
+            </button>
+          </div>
         </div>
       )}
     </div>

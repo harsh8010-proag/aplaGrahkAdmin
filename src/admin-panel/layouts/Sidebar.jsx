@@ -34,10 +34,10 @@ export default function Sidebar({ onNavigate }) {
       await logout().unwrap();
       toast.success("Logged out successfully");
     } catch (error) {
-      console.error("Logout error:", error);
-      toast.error("Session expired, logging out");
+      // console.error("Logout error:", error);
+      // toast.error("Session expired, logging out");
     } finally {
-      localStorage.removeItem("token");
+      localStorage.removeItem("admin_token");
       localStorage.removeItem("user_data");
       navigate("/login");
       setIsLoggingOut(false);
