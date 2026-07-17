@@ -33,7 +33,14 @@ export const applicationsApi = createApi({
           status,
         },
       }),
-      invalidatesTags: ["Applications"]
+      invalidatesTags: ["Applications"],
+    }),
+    updateApplicationPaymentStatus: builder.mutation({
+      query: ({ id, status }) => ({
+        url: `/v1/admin/apllication-paymentstatus/${id}`,
+        method: "PATCH",
+        body: { status },
+      }),
     }),
   }),
 });
@@ -42,5 +49,6 @@ export const {
   useGetAplicationsQuery,
   useGetApplicationByIdQuery,
   useUpdateApplicationStatusMutation,
-  useUpdateApplicationDocStatusMutation
+  useUpdateApplicationDocStatusMutation,
+  useUpdateApplicationPaymentStatusMutation
 } = applicationsApi;
