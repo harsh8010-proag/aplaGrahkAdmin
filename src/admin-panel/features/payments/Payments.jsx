@@ -19,7 +19,7 @@ import {
   useUpdateApplicationPaymentStatusMutation,
 } from "../../../redux/api/applicationsApi";
 
-const ITEMS_PER_PAGE = 10;
+const ITEMS_PER_PAGE = 6;
 
 // Normalize whatever the API sends into "Success" | "Failed" | "Pending"
 const normalizePaymentStatus = (status) => {
@@ -262,7 +262,7 @@ export default function Payments() {
           />
         )}
         <Eye size={14} />
-        View
+        
       </a>
     );
   };
