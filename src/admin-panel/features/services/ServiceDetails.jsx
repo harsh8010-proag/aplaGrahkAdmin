@@ -62,7 +62,7 @@ const ServiceDetails = () => {
     },
     {
       title: "Service Fees",
-      value: `₹${service?.stats?.serviceFee ?? (service?.priceInPaise || 0) / 100}`,
+      value: `₹${service?.stats?.serviceFee ?? (service?.price || 0) / 100}`,
       sub: "Per application",
       icon: IndianRupee,
       color: "bg-orange-100 text-orange-500",
@@ -286,10 +286,9 @@ const ServiceDetails = () => {
                     </td>
                     <td className="p-4">
                       <span
-                        className={`px-3 py-1 rounded-full text-xs ${
-                          statusStyles[app.status] ||
+                        className={`px-3 py-1 rounded-full text-xs ${statusStyles[app.status] ||
                           "bg-gray-100 text-gray-700"
-                        }`}
+                          }`}
                       >
                         {app.status}
                       </span>

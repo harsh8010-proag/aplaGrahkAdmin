@@ -4,7 +4,7 @@ import toast from 'react-hot-toast';
 import {
   useCreateServiceMutation,
   useUpdateServiceMutation,
-  
+
 } from "../../redux/api/servicesApi";
 import { useGetAllDocumentTypeQuery } from "../../redux/api/documentApi";
 
@@ -24,7 +24,7 @@ const DynamicInputModal = ({ isOpen, onClose, initialData }) => {
     if (isOpen) {
       if (initialData) {
         setServiceName(initialData.name?.en || initialData.name || "");
-        setFees(initialData.priceInPaise ? (initialData.priceInPaise / 100).toString() : "");
+        setFees(initialData.price ? (initialData.price / 100).toString() : "");
         if (initialData.documents && initialData.documents.length > 0) {
           setFields(initialData.documents.map(d => {
             if (typeof d === 'string') return d;
@@ -63,7 +63,7 @@ const DynamicInputModal = ({ isOpen, onClose, initialData }) => {
       const payload = {
         name: { en: serviceName },
         description: { en: "Service added via quick add" },
-        priceInPaise: Number(fees) * 100,
+        price: Number(fees) * 100,
         isActive: initialData ? initialData.isActive : true,
         documents: fields.filter(f => typeof f === 'string' && f.trim() !== "").map(f => {
           const selectedDocType = docTypes.find(dt => dt._id === f);
