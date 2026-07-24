@@ -46,68 +46,68 @@ export default function ApplicationDetails() {
   const [updateApplicationDocStatus] = useUpdateApplicationDocStatusMutation();
   const [updateApplicationStatus] = useUpdateApplicationStatusMutation();
 
-  console.log("Full API Reponse:", data);
-  
+  // console.log("Full API Reponse:", data);
+  const app = data?.application;
 
   // Header WhatsApp icon
   // ADMIN_WHATSAPP_NUMBER wala const hata do, ab zarurat nahi
 
-// Header WhatsApp icon
-const handleWhatsAppClick = () => {
-  const number = app?.formData?.mobileNumber;
+  // Header WhatsApp icon
+  const handleWhatsAppClick = () => {
+    const number = app?.userId?.mobileNumber;
+    console.log(app, 'apppppp')
+    if (!number) {
+      alert("Mobile number not found");
+      return;
+    }
 
-  if (!number) {
-    alert("Mobile number not found");
-    return;
-  }
+    const finalNumber = number.startsWith("91")
+      ? number
+      : `91${number}`;
 
-  const finalNumber = number.startsWith("91")
-    ? number
-    : `91${number}`;
+    window.open(
+      `https://wa.me/${finalNumber}`,
+      "_blank",
+      "noopener,noreferrer"
+    );
+  };
+  // Send Message box ka WhatsApp icon
+  const handleSendMessageWhatsApp = () => {
+    const number = app?.userId?.mobileNumber;
 
-  window.open(
-    `https://wa.me/${finalNumber}`,
-    "_blank",
-    "noopener,noreferrer"
-  );
-};
-// Send Message box ka WhatsApp icon
-const handleSendMessageWhatsApp = () => {
-  const number = app?.formData?.mobileNumber;
+    if (!number) {
+      alert("Mobile number not found");
+      return;
+    }
 
-  if (!number) {
-    alert("Mobile number not found");
-    return;
-  }
+    const finalNumber = number.startsWith("91")
+      ? number
+      : `91${number}`;
 
-  const finalNumber = number.startsWith("91")
-    ? number
-    : `91${number}`;
+    const message = chatMessage.trim();
 
-  const message = chatMessage.trim();
+    const url = message
+      ? `https://wa.me/${finalNumber}?text=${encodeURIComponent(message)}`
+      : `https://wa.me/${finalNumber}`;
 
-  const url = message
-    ? `https://wa.me/${finalNumber}?text=${encodeURIComponent(message)}`
-    : `https://wa.me/${finalNumber}`;
-
-  window.open(url, "_blank", "noopener,noreferrer");
-  setChatMessage("");
-};
+    window.open(url, "_blank", "noopener,noreferrer");
+    setChatMessage("");
+  };
 
   // console.log("Application Detail:", data);
 
-  const app = data?.application;
 
- const isInProgress =
-  app?.status === "In Progress" ||
-  app?.status === "InProgress" ||
-  app?.status === "Completed" ||
-  app?.status === "Approved" ||
-  app?.status === "Rejected";
 
- const isCompleted = app?.status === "Completed" || app?.status === "Approved";
-const isRejected = app?.status === "Rejected";
-const isFinalStep = isCompleted || isRejected;
+  const isInProgress =
+    app?.status === "In Progress" ||
+    app?.status === "InProgress" ||
+    app?.status === "Completed" ||
+    app?.status === "Approved" ||
+    app?.status === "Rejected";
+
+  const isCompleted = app?.status === "Completed" || app?.status === "Approved";
+  const isRejected = app?.status === "Rejected";
+  const isFinalStep = isCompleted || isRejected;
 
   const InputField = ({ label, value, readOnly = true }) => (
     <div className="flex flex-col">
@@ -236,12 +236,12 @@ const isFinalStep = isCompleted || isRejected;
           <div>
             <div className="flex items-center space-x-4">
               <h1 className="text-[28px] font-bold text-[#041A40]">
-                Application {app._id?.slice(-8).toUpperCase()}
+                Application {app?._id?.slice(-8).toUpperCase()}
               </h1>
-              <StatusBadge status={app.status} />
+              <StatusBadge status={app?.status} />
             </div>
             <p className="text-sm font-bold text-[#041A40] mt-1">
-              Service ID: {app.serviceId} <span className="mx-2">|</span>{" "}
+              Service ID: {app?.serviceId?._id} <span className="mx-2">|</span>{" "}
               Submitted On {formatDate(app.createdAt)}
             </p>
           </div>
@@ -514,13 +514,13 @@ const isFinalStep = isCompleted || isRejected;
           <div className="border border-gray-200 rounded-[20px] p-5 bg-white">
             <div className="flex items-center space-x-4 border-b border-gray-100 pb-4 mb-4">
               <div className="w-[50px] h-[50px] bg-[#041A40] rounded-full flex items-center justify-center text-white font-bold text-lg shrink-0">
-                {(formData.applicantName || formData.headOfFamily || "NA")
+                {(formData?.name || formData?.fullname || app?.userId?.name || "NA")
                   .slice(0, 2)
                   .toUpperCase()}
               </div>
               <div>
                 <h3 className="font-bold text-[#041A40] text-base">
-                  {formData.applicantName || formData.headOfFamily || "Unknown"}
+                  {formData?.name || formData?.fullname || app?.userId?.name || "Unknown"}
                 </h3>
                 <p className="text-xs text-gray-400">
                   User-
@@ -539,7 +539,7 @@ const isFinalStep = isCompleted || isRejected;
                     Contact No
                   </p>
                   <p className="text-sm font-bold text-gray-800">
-                    {formData.mobileNumber || "N/A"}
+                    {formData?.mobileNumber || formData?.number || app?.userId?.mobileNumber || "N/A"}
                   </p>
                 </div>
               </div>
@@ -550,7 +550,7 @@ const isFinalStep = isCompleted || isRejected;
                     Address
                   </p>
                   <p className="text-sm font-bold text-gray-800 leading-tight">
-                    {formData.address || "N/A"}
+                    {formData?.address || app?.userId?.address || "N/A"}
                   </p>
                 </div>
               </div>
@@ -558,101 +558,96 @@ const isFinalStep = isCompleted || isRejected;
           </div>
 
           {/* Timeline Card */}
-         {/* Timeline Card */}
-<div className="border border-gray-200 rounded-[20px] p-6 bg-white">
-  <h3 className="font-bold text-[#041A40] mb-6">Timeline</h3>
-  <div className="space-y-6 relative">
-    {/* Step 1: Application Submitted - always shown */}
-    <div className="relative flex items-center gap-4">
-      <div className="w-6 h-6 rounded-full bg-[#22C55E] flex items-center justify-center shrink-0 z-10 border-4 border-white shadow-sm">
-        <Check className="w-3 h-3 text-white" strokeWidth={3} />
-      </div>
-      <div>
-        <p className="text-sm font-bold text-[#041A40]">
-          Application Submitted
-        </p>
-        <p className="text-xs text-gray-400">
-          {formatDate(app.createdAt)}
-        </p>
-      </div>
-      <div className="absolute left-3 top-6 w-0.5 h-6 bg-[#22C55E] -translate-x-1/2 z-0"></div>
-    </div>
+          {/* Timeline Card */}
+          <div className="border border-gray-200 rounded-[20px] p-6 bg-white">
+            <h3 className="font-bold text-[#041A40] mb-6">Timeline</h3>
+            <div className="space-y-6 relative">
+              {/* Step 1: Application Submitted - always shown */}
+              <div className="relative flex items-center gap-4">
+                <div className="w-6 h-6 rounded-full bg-[#22C55E] flex items-center justify-center shrink-0 z-10 border-4 border-white shadow-sm">
+                  <Check className="w-3 h-3 text-white" strokeWidth={3} />
+                </div>
+                <div>
+                  <p className="text-sm font-bold text-[#041A40]">
+                    Application Submitted
+                  </p>
+                  <p className="text-xs text-gray-400">
+                    {formatDate(app.createdAt)}
+                  </p>
+                </div>
+                <div className="absolute left-3 top-6 w-0.5 h-6 bg-[#22C55E] -translate-x-1/2 z-0"></div>
+              </div>
 
-    {isRejected ? (
-      /* Rejected: skip In Progress, go straight to Rejected */
-      <div className="relative flex items-center gap-4">
-        <div className="w-6 h-6 rounded-full bg-white border-2 border-[#EF4444] flex items-center justify-center shrink-0 z-10 shadow-sm">
-          <div className="w-2 h-2 rounded-full bg-[#EF4444]"></div>
-        </div>
-        <div>
-          <p className="text-sm font-bold text-[#041A40]">Rejected</p>
-          <p className="text-xs text-gray-400">
-            {formatDate(app.updatedAt)}
-          </p>
-        </div>
-      </div>
-    ) : (
-      <>
-        {/* Step 2: In Progress */}
-        <div className="relative flex items-center gap-4">
-          <div
-            className={`w-6 h-6 rounded-full flex items-center justify-center shrink-0 z-10 shadow-sm ${
-              isInProgress
-                ? "bg-white border-2 border-[#22C55E]"
-                : "bg-white border-2 border-gray-200"
-            }`}
-          >
-            <div
-              className={`w-2 h-2 rounded-full ${
-                isInProgress ? "bg-[#22C55E]" : "bg-gray-200"
-              }`}
-            ></div>
-          </div>
-          <div>
-            <p className="text-sm font-bold text-[#041A40]">
-              In Progress
-            </p>
-            <p className="text-xs text-gray-400">
-              {["In Progress", "Approved", "Completed"].includes(
-                app.status,
-              )
-                ? formatDate(app.updatedAt)
-                : "pending"}
-            </p>
-          </div>
-          <div
-            className={`absolute left-3 top-6 w-0.5 h-6 -translate-x-1/2 z-0 ${
-              isCompleted ? "bg-[#22C55E]" : "bg-gray-200"
-            }`}
-          />
-        </div>
+              {isRejected ? (
+                /* Rejected: skip In Progress, go straight to Rejected */
+                <div className="relative flex items-center gap-4">
+                  <div className="w-6 h-6 rounded-full bg-white border-2 border-[#EF4444] flex items-center justify-center shrink-0 z-10 shadow-sm">
+                    <div className="w-2 h-2 rounded-full bg-[#EF4444]"></div>
+                  </div>
+                  <div>
+                    <p className="text-sm font-bold text-[#041A40]">Rejected</p>
+                    <p className="text-xs text-gray-400">
+                      {formatDate(app.updatedAt)}
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  {/* Step 2: In Progress */}
+                  <div className="relative flex items-center gap-4">
+                    <div
+                      className={`w-6 h-6 rounded-full flex items-center justify-center shrink-0 z-10 shadow-sm ${isInProgress
+                        ? "bg-white border-2 border-[#22C55E]"
+                        : "bg-white border-2 border-gray-200"
+                        }`}
+                    >
+                      <div
+                        className={`w-2 h-2 rounded-full ${isInProgress ? "bg-[#22C55E]" : "bg-gray-200"
+                          }`}
+                      ></div>
+                    </div>
+                    <div>
+                      <p className="text-sm font-bold text-[#041A40]">
+                        In Progress
+                      </p>
+                      <p className="text-xs text-gray-400">
+                        {["In Progress", "Approved", "Completed"].includes(
+                          app.status,
+                        )
+                          ? formatDate(app.updatedAt)
+                          : "pending"}
+                      </p>
+                    </div>
+                    <div
+                      className={`absolute left-3 top-6 w-0.5 h-6 -translate-x-1/2 z-0 ${isCompleted ? "bg-[#22C55E]" : "bg-gray-200"
+                        }`}
+                    />
+                  </div>
 
-        {/* Step 3: Completed */}
-        <div className="relative flex items-center gap-4">
-          <div
-            className={`w-6 h-6 rounded-full flex items-center justify-center shrink-0 z-10 shadow-sm ${
-              isCompleted
-                ? "bg-white border-2 border-[#22C55E]"
-                : "bg-white border-2 border-gray-200"
-            }`}
-          >
-            <div
-              className={`w-2 h-2 rounded-full ${
-                isCompleted ? "bg-[#22C55E]" : "bg-gray-200"
-              }`}
-            ></div>
+                  {/* Step 3: Completed */}
+                  <div className="relative flex items-center gap-4">
+                    <div
+                      className={`w-6 h-6 rounded-full flex items-center justify-center shrink-0 z-10 shadow-sm ${isCompleted
+                        ? "bg-white border-2 border-[#22C55E]"
+                        : "bg-white border-2 border-gray-200"
+                        }`}
+                    >
+                      <div
+                        className={`w-2 h-2 rounded-full ${isCompleted ? "bg-[#22C55E]" : "bg-gray-200"
+                          }`}
+                      ></div>
+                    </div>
+                    <div>
+                      <p className="text-sm font-bold text-[#041A40]">Completed</p>
+                      <p className="text-xs text-gray-400">
+                        {isCompleted ? formatDate(app.updatedAt) : "Pending"}
+                      </p>
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
           </div>
-          <div>
-            <p className="text-sm font-bold text-[#041A40]">Completed</p>
-            <p className="text-xs text-gray-400">
-              {isCompleted ? formatDate(app.updatedAt) : "Pending"}
-            </p>
-          </div>
-        </div>
-      </>
-    )}
-  </div>
-</div>
         </div>
       </div>
     </div>

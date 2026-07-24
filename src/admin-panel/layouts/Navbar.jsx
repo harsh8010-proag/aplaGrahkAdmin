@@ -1,5 +1,6 @@
 import { Link, useNavigate } from "react-router-dom";
 import React, { useState } from "react";
+import { CircleChevronRight } from 'lucide-react';
 import { FiLogOut } from "react-icons/fi";
 import { useGetAdminQuery } from "../../redux/api/authApi";
 import DynamicInputModal from "../../shared/models/addServiceModel";
@@ -28,7 +29,7 @@ export default function Navbar({ onLogoClick }) {
   };
 
   const handleLogout = () => {
-    localStorage.removeItem("admin_token"); 
+    localStorage.removeItem("admin_token");
     localStorage.removeItem("user_data")
     navigate("/login", { replace: true });
   };
@@ -39,8 +40,11 @@ export default function Navbar({ onLogoClick }) {
         <img
           src="/Logo/Logo.svg"
           alt="Aapla Grahak Logo"
-          className="h-12 md:h-16 object-contain mr-4 md:mr-6"
+          className="h-12 md:h-16 object-contain mr-4 md:mr-6 hidden min-[770px]:block"
         />
+        <div className="  md:h-16 mr-4 md:mr-6 min-[770px]:hidden" >
+          <CircleChevronRight size={35} />
+        </div>
       </Link>
 
       <div className="flex-1 flex items-center justify-between bg-gray-100 rounded-xl px-3 md:px-4 py-2 border border-gray-200 shadow-sm">
@@ -77,7 +81,7 @@ export default function Navbar({ onLogoClick }) {
           </div>
 
           {/* Dropdown */}
-         
+
         </div>
       </div>
 

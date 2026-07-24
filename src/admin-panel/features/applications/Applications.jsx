@@ -8,6 +8,7 @@ import {
   Download,
   Check,
   X,
+  User,
 } from "lucide-react";
 import { FaFileCircleCheck } from "react-icons/fa6";
 import StatCard from "../../../shared/components/StatCard";
@@ -142,12 +143,12 @@ export default function Applications() {
 
   // console.log("All Applications:", allApplications);
 
-const applications = allApplications?.applications || [];
+  const applications = allApplications?.applications || [];
 
-// Newest application pehle dikhane ke liye
-const sortedApplications = [...applications].sort(
-  (a, b) => new Date(b.createdAt) - new Date(a.createdAt),
-);
+  // Newest application pehle dikhane ke liye
+  const sortedApplications = [...applications].sort(
+    (a, b) => new Date(b.createdAt) - new Date(a.createdAt),
+  );
 
   const pendingCount = applications.filter(
     (app) => app.status === "Pending",
@@ -208,9 +209,9 @@ const sortedApplications = [...applications].sort(
 
   const filteredApplications = sortedApplications.filter((app) => {
     const applicantName =
-      app.formData?.applicantName ||
-      app.formData?.headOfFamily ||
-      app.formData?.fullName ||
+      app.formData?.name ||
+      app.formData?.fullname ||
+      app.userId?.name ||
       "";
     const phone = app.formData?.mobileNumber || app.formData?.phone || "";
     const idStr = app._id || "";
@@ -260,10 +261,9 @@ const sortedApplications = [...applications].sort(
     const rows = filteredApplications.map((app) => {
       const applicantName =
         app.formData?.applicantName ||
-        app.formData?.headOfFamily ||
         app.formData?.fullName ||
-        "Unknown";
-      const phone = app.formData?.mobileNumber || app.formData?.phone || "N/A";
+        app.userId?.name || "Unknown";
+      const phone = app.formData?.mobileNumber || app.formData?.phone || app.userId?.mobileNumber || "N/A";
       const service = app.serviceId?.name?.en || app.serviceId || "N/A";
       const submittedOn = new Date(app.createdAt).toLocaleDateString("en-IN");
 
@@ -324,7 +324,7 @@ const sortedApplications = [...applications].sort(
     }
   };
 
-  const handleUpdateStatus = () => {};
+  const handleUpdateStatus = () => { };
 
   const getStatusBadge = (status) => {
     switch (status) {
@@ -364,11 +364,12 @@ const sortedApplications = [...applications].sort(
   const renderRow = (app, idx) => {
     const applicantName =
       app.formData?.applicantName ||
-      app.formData?.headOfFamily ||
       app.formData?.fullName ||
+      app.formData?.name ||
+      app.userId?.name ||
       "Unknown";
 
-    const phone = app.formData?.mobileNumber || app.formData?.phone || "N/A";
+    const phone = app.formData?.mobileNumber || app.formData?.phone || app.formData?.mobile || app.userId?.mobileNumber || "N/A";
 
     return (
       <tr
@@ -379,9 +380,10 @@ const sortedApplications = [...applications].sort(
           {app._id?.slice(-8).toUpperCase()}
         </td>
         <td className="px-6 py-4 font-bold flex items-center space-x-3 whitespace-nowrap">
-          <div className="w-10 h-10 bg-[#041A40] rounded-full flex items-center justify-center text-white font-bold text-sm shrink-0">
-            {applicantName.slice(0, 2).toUpperCase()}
-          </div>
+          {app?.userId?.profileImage ?
+            <div style={{ backgroundImage: `url(${app?.userId?.profileImage})` }} className="w-10 h-10 bg-[#041A40] bg-cover bg-center rounded-full flex items-center justify-center text-white font-bold text-sm shrink-0">
+            </div> :
+            <User className="w-8 h-8 sm:w-8 sm:h-8 text-blue-700  " />}
           <div>
             <div className="text-gray-900">{applicantName}</div>
             <div className="text-gray-400 font-normal text-xs">{phone}</div>
@@ -680,15 +682,15 @@ const sortedApplications = [...applications].sort(
                 style={
                   isActive
                     ? {
-                        backgroundColor: tab.bg,
-                        color: tab.color,
-                        borderColor: tab.color,
-                      }
+                      backgroundColor: tab.bg,
+                      color: tab.color,
+                      borderColor: tab.color,
+                    }
                     : {
-                        backgroundColor: "white",
-                        color: "#6B7280",
-                        borderColor: "#E5E7EB",
-                      }
+                      backgroundColor: "white",
+                      color: "#6B7280",
+                      borderColor: "#E5E7EB",
+                    }
                 }
               >
                 {tab.label} ({tab.count})
@@ -729,11 +731,10 @@ const sortedApplications = [...applications].sort(
                   <button
                     key={page}
                     onClick={() => handlePageChange(page)}
-                    className={`px-3 py-1.5 rounded-lg text-sm font-bold ${
-                      currentPage === page
-                        ? "bg-[#FF8303] text-white"
-                        : "border border-gray-200 text-[#041A40] hover:bg-gray-100"
-                    }`}
+                    className={`px-3 py-1.5 rounded-lg text-sm font-bold ${currentPage === page
+                      ? "bg-[#FF8303] text-white"
+                      : "border border-gray-200 text-[#041A40] hover:bg-gray-100"
+                      }`}
                   >
                     {page}
                   </button>

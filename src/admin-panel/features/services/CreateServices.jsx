@@ -37,8 +37,27 @@ const INPUT_TYPES = [
   { value: "date", label: "Date" },
   { value: "textarea", label: "Textarea" },
   { value: "select", label: "Select (dropdown)" },
+  { value: "radio", label: "Radio buttons" },
   { value: "checkbox", label: "Checkbox" },
 ];
+
+// inputType values that need an "options" list configured by the admin
+const OPTION_BASED_TYPES = ["select", "radio"];
+
+const emptyOption = () => ({ value: "", label: { ...emptyTri } });
+
+// Normalizes an option coming from an existing service (old data may have
+// saved options as plain strings, e.g. "Single") into the {value, label}
+// shape this form (and the DynamicField consumer) works with.
+const normalizeOptionForEdit = (opt) => {
+  if (typeof opt === "string") {
+    return { value: opt, label: { en: opt, hi: "", mr: "" } };
+  }
+  return {
+    value: opt.value ?? "",
+    label: { en: "", hi: "", mr: "", ...(opt.label || {}) },
+  };
+};
 
 /* ---------------------------------------------------------------- */
 /* Small building blocks                                            */
@@ -125,6 +144,79 @@ function TextInput({ value, onChange, placeholder, type = "text", ...rest }) {
   );
 }
 
+// Lets an admin build the option list for a "select" or "radio" field.
+// Each option has a stored `value` (what gets saved as the answer) and a
+// tri-lingual `label` (what the applicant sees) — matching the shape
+// DynamicField/normalizeOptions expects on the user-facing form.
+function OptionsEditor({ options, onChange }) {
+  const updateOption = (idx, patch) =>
+    onChange(options.map((o, i) => (i === idx ? { ...o, ...patch } : o)));
+
+  const addOption = () => onChange([...options, emptyOption()]);
+
+  const removeOption = (idx) => onChange(options.filter((_, i) => i !== idx));
+
+  return (
+    <div className="space-y-3 rounded-lg border border-dashed border-slate-200 p-3">
+      <div className="flex items-center justify-between">
+        <FieldLabel required>Options</FieldLabel>
+        <button
+          type="button"
+          onClick={addOption}
+          className="flex items-center gap-1 rounded-md border border-slate-200 px-2 py-1 text-xs font-medium text-slate-700 transition hover:border-indigo-300 hover:text-indigo-700"
+        >
+          <Plus size={12} /> Add option
+        </button>
+      </div>
+
+      {options.length === 0 ? (
+        <p className="text-xs text-slate-400">
+          No options yet — add at least one so applicants have something to pick from.
+        </p>
+      ) : (
+        <div className="space-y-2">
+          {options.map((opt, idx) => (
+            <div key={idx} className="rounded-lg bg-white p-2.5">
+              <div className="mb-2 flex items-center justify-between gap-2">
+                <input
+                  value={opt.value}
+                  onChange={(e) => updateOption(idx, { value: e.target.value })}
+                  placeholder="Stored value (e.g. APL)"
+                  className="w-40 rounded-md border border-slate-300 px-2 py-1 text-xs font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500/60"
+                />
+                <button
+                  type="button"
+                  onClick={() => removeOption(idx)}
+                  className="p-1 text-slate-400 transition hover:text-red-600"
+                >
+                  <Trash2 size={14} />
+                </button>
+              </div>
+              <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+                {LANGS.map((l) => (
+                  <div key={l.key} className="relative">
+                    <span className="pointer-events-none absolute left-2 top-1.5 text-[9px] font-semibold uppercase tracking-wide text-slate-400">
+                      {l.key}
+                    </span>
+                    <input
+                      value={opt.label[l.key]}
+                      onChange={(e) =>
+                        updateOption(idx, { label: { ...opt.label, [l.key]: e.target.value } })
+                      }
+                      placeholder={l.label}
+                      className="w-full rounded-md border border-slate-300 pt-5 pb-1.5 px-2 text-xs text-slate-900 placeholder-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500/60"
+                    />
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 /* ---------------------------------------------------------------- */
 /* Main component                                                   */
 /* ---------------------------------------------------------------- */
@@ -156,7 +248,7 @@ export default function CreateServices() {
       inputType: "text",
       isRequired: true,
       placeholder: { ...emptyTri },
-      options: [],
+      options: [], // populated with {value, label:{en,hi,mr}} when inputType is select/radio
     },
   ]);
 
@@ -213,7 +305,7 @@ export default function CreateServices() {
           inputType: f.inputType || "text",
           isRequired: f.isRequired ?? true,
           placeholder: f.placeholder || { ...emptyTri },
-          options: Array.isArray(f.options) ? f.options : [],
+          options: Array.isArray(f.options) ? f.options.map(normalizeOptionForEdit) : [],
         })),
       );
     }
@@ -250,6 +342,16 @@ export default function CreateServices() {
         options: [],
       },
     ]);
+  // convenience: when admin switches a field to select/radio, seed one empty option
+  const setFieldInputType = (idx, inputType) =>
+    updateField(idx, {
+      inputType,
+      options: OPTION_BASED_TYPES.includes(inputType)
+        ? formFields[idx].options.length
+          ? formFields[idx].options
+          : [emptyOption()]
+        : formFields[idx].options,
+    });
 
   const removeField = (idx) => setFormFields((fields) => fields.filter((_, i) => i !== idx));
 
@@ -276,8 +378,14 @@ export default function CreateServices() {
     if (price === "" || Number.isNaN(Number(price)) || Number(price) < 0)
       errors.push("Enter a valid price.");
     formFields.forEach((f, i) => {
-      if (f.key.trim() && f.inputType === "select" && f.options.length === 0) {
-        errors.push(`Field #${i + 1} ("${f.key}") is a select but has no options.`);
+      if (!f.key.trim() || !OPTION_BASED_TYPES.includes(f.inputType)) return;
+      if (f.options.length === 0) {
+        errors.push(`Field #${i + 1} ("${f.key}") is a ${f.inputType} but has no options.`);
+        return;
+      }
+      const incomplete = f.options.some((o) => !o.value?.trim() || !o.label?.en?.trim());
+      if (incomplete) {
+        errors.push(`Field #${i + 1} ("${f.key}") has an option missing a value or English label.`);
       }
     });
     return errors;
@@ -296,7 +404,9 @@ export default function CreateServices() {
 
     const cleanedFormFields = formFields
       .filter((f) => f.key && f.key.trim() !== "")
-      .map((f) => (f.inputType === "select" ? f : { ...f, options: undefined }));
+      .map((f) =>
+        OPTION_BASED_TYPES.includes(f.inputType) ? f : { ...f, options: undefined },
+      );
 
     const cleanedDocuments = documents.filter(
       (d) => d.documentTypeId && d.documentTypeId.trim() !== "",
@@ -414,15 +524,15 @@ export default function CreateServices() {
         >
           <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
             <div>
-              <FieldLabel required>Price (in Paise)</FieldLabel>
+              <FieldLabel required>Fees </FieldLabel>
               <TextInput
                 type="number"
                 min="0"
                 value={price}
                 onChange={(e) => setPrice(e.target.value)}
-                placeholder="e.g. 5000"
+                placeholder="e.g. ₹200 "
               />
-              {rupees && <p className="mt-1 text-xs text-slate-400">≈ ₹{rupees}</p>}
+
             </div>
 
             <div>
@@ -645,7 +755,7 @@ export default function CreateServices() {
                     />
                     <select
                       value={field.inputType}
-                      onChange={(e) => updateField(idx, { inputType: e.target.value })}
+                      onChange={(e) => setFieldInputType(idx, e.target.value)}
                       className="rounded-md border border-slate-300 px-2 py-1.5 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/60"
                     >
                       {INPUT_TYPES.map((t) => (
@@ -676,34 +786,11 @@ export default function CreateServices() {
                     onChange={(v) => updateField(idx, { placeholder: v })}
                   />
 
-                  {field.inputType === "select" && (
-                    <div>
-                      <FieldLabel required>Options</FieldLabel>
-                      <TextInput
-                        value={field.options.join(", ")}
-                        onChange={(e) =>
-                          updateField(idx, {
-                            options: e.target.value
-                              .split(",")
-                              .map((o) => o.trim())
-                              .filter(Boolean),
-                          })
-                        }
-                        placeholder="Comma-separated, e.g. Single, Married, Divorced"
-                      />
-                      {field.options.length > 0 && (
-                        <div className="mt-2 flex flex-wrap gap-1.5">
-                          {field.options.map((opt, i) => (
-                            <span
-                              key={i}
-                              className="rounded-full bg-slate-100 px-2.5 py-0.5 text-xs text-slate-600"
-                            >
-                              {opt}
-                            </span>
-                          ))}
-                        </div>
-                      )}
-                    </div>
+                  {OPTION_BASED_TYPES.includes(field.inputType) && (
+                    <OptionsEditor
+                      options={field.options}
+                      onChange={(opts) => updateField(idx, { options: opts })}
+                    />
                   )}
                 </div>
               ))}

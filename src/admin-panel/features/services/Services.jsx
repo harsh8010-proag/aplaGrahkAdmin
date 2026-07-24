@@ -149,7 +149,7 @@ export default function Services() {
             const isActive = service.isActive;
             const processed = "0 Applications Processed";
             const fees = service.price
-              ? `₹${service.price / 100}`
+              ? `₹${service.price}`
               : "₹0";
             const time = service.processingTime?.en || "Standard";
             const docs = Array.isArray(service.documents)
@@ -171,14 +171,14 @@ export default function Services() {
                     <button
                       onClick={() => handleToggle(id, isActive)}
                       className={`w-[42px] h-6 shrink-0 rounded-full relative transition-colors duration-200 focus:outline-none border-2 ${isActive
-                          ? "bg-[#041A40] border-[#041A40]"
-                          : "bg-white border-[#041A40] cursor-pointer"
+                        ? "bg-[#041A40] border-[#041A40]"
+                        : "bg-white border-[#041A40] cursor-pointer"
                         }`}
                     >
                       <span
                         className={`absolute top-[2px] left-[2px] w-[16px] h-[16px] rounded-full transition-transform duration-200 ${isActive
-                            ? "bg-white translate-x-[18px]"
-                            : "bg-[#041A40] translate-x-0"
+                          ? "bg-white translate-x-[18px]"
+                          : "bg-[#041A40] translate-x-0"
                           }`}
                       ></span>
                     </button>
@@ -311,8 +311,8 @@ export default function Services() {
                 key={page}
                 onClick={() => handlePageChange(page)}
                 className={`px-3 py-1.5 rounded-lg text-sm font-bold ${currentPage === page
-                    ? "bg-[#FF8303] text-white"
-                    : "border border-gray-200 text-[#041A40] hover:bg-gray-100"
+                  ? "bg-[#FF8303] text-white"
+                  : "border border-gray-200 text-[#041A40] hover:bg-gray-100"
                   }`}
               >
                 {page}
