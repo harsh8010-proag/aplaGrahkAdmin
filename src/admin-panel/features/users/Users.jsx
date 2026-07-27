@@ -1,4 +1,4 @@
-import { Users as UsersIcon, Ban, Download, Loader2 } from "lucide-react";
+import { Users as UsersIcon, Ban, Download, Loader2, Delete, UserX } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import StatCard from "../../../shared/components/StatCard";
 import Button from "../../../shared/components/Button";
@@ -15,8 +15,10 @@ import * as XLSX from "xlsx";
 export default function Users() {
   const navigate = useNavigate();
   const { data, isLoading, isError } = useGetAllUsersQuery();
-  const [userBlock, { isLoading: isBlocking }] = useUserBlockMutation();
-  const [userDelete, { isLoading: deleteLoding }] = useUserDeleteMutation();
+  const [userBlock] = useUserBlockMutation();
+  const [userDelete] = useUserDeleteMutation();
+  const [blockingId, setBlockingId] = useState(null);
+  const [deletingId, setDeletingId] = useState(null);
   const [search, setSearch] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const usersPerPage = 5;
@@ -35,6 +37,7 @@ export default function Users() {
     if (!confirmDelete) return;
 
     try {
+      setDeletingId(id);
       const res = await userDelete(id).unwrap();
 
       console.log(res);
@@ -42,14 +45,19 @@ export default function Users() {
     } catch (err) {
       console.error(err);
       // toast.error(err?.data?.message || "Failed to delete user");
+    } finally {
+      setDeletingId(null);
     }
   };
 
   const handleUserBlock = async (id) => {
     try {
+      setBlockingId(id);
       await userBlock(id).unwrap();
     } catch (error) {
       console.log(error);
+    } finally {
+      setBlockingId(null);
     }
   };
 
@@ -93,7 +101,11 @@ export default function Users() {
     XLSX.writeFile(workbook, "Users.xlsx");
   };
 
-  const filterUser = sortedUsers.filter((user) => {
+  const activeSortedUsers = [...users]
+    .filter((user) => !user.isDeleted)
+    .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+  const filterUser = activeSortedUsers.filter((user) => {
     return (user.name || "").toLowerCase().includes(search.toLowerCase());
   });
 
@@ -122,10 +134,14 @@ export default function Users() {
     const joinedOn = formatDate(user.createdAt || user.joinedOn);
     const applications = user.applicationCount || 0;
     const isActive = !user.isBlock;
+    const isDeleted = user.isDeleted;
     const address1 = user.address || "Not Provided";
     const address2 = [user.taluka, user.district].filter(Boolean).join(", ");
-
+    const isRowBlocking = blockingId === id;
+    const isRowDeleting = deletingId === id;
+    if (isDeleted) return null;
     return (
+
       <tr
         key={id}
         className={`border-b border-gray-100 hover:bg-gray-50 transition-colors ${idx === users.length - 1 ? "border-none" : ""}`}
@@ -167,20 +183,22 @@ export default function Users() {
         <td className="px-6 py-4">
           <button
             onClick={() => handleUserBlock(id)}
-            disabled={isBlocking}
-            className={`w-12 h-6 rounded-full relative transition-colors duration-200 focus:outline-none border-2 ${
-              isActive
-                ? "bg-[#FF8303] border-[#FF8303]"
-                : "bg-gray-100 border-gray-300"
-            } ${isBlocking ? "opacity-50 cursor-not-allowed" : ""}`}
+            disabled={isRowBlocking}
+            className={`w-12 h-6 rounded-full relative transition-colors duration-200 focus:outline-none border-2 ${isActive
+              ? "bg-[#FF8303] border-[#FF8303]"
+              : "bg-gray-100 border-gray-300"
+              } ${isRowBlocking ? "opacity-75 cursor-not-allowed" : ""}`}
           >
             <span
-              className={`absolute top-[2px] left-[2px] w-4 h-4 rounded-full transition-transform duration-200 ${
-                isActive
-                  ? "bg-white translate-x-6"
-                  : "bg-gray-400 translate-x-0"
-              }`}
-            />
+              className={`absolute top-[2px] left-[2px] w-4 h-4 rounded-full transition-transform duration-200 flex items-center justify-center ${isActive
+                ? "bg-white translate-x-6 text-[#FF8303]"
+                : "bg-gray-400 translate-x-0 text-white"
+                }`}
+            >
+              {isRowBlocking && (
+                <Loader2 className="w-2.5 h-2.5 animate-spin" />
+              )}
+            </span>
           </button>
         </td>
 
@@ -210,16 +228,20 @@ export default function Users() {
             </button> */}
             <button
               onClick={() => handleDeleteUser(id)}
-              disabled={deleteLoding}
+              disabled={isRowDeleting}
               className="text-red-600 transition-transform hover:scale-110 focus:outline-none disabled:opacity-50"
             >
-              <svg
-                viewBox="0 0 24 24"
-                fill="currentColor"
-                className="w-[18px] h-[18px]"
-              >
-                <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z" />
-              </svg>
+              {isRowDeleting ? (
+                <Loader2 className="w-[18px] h-[18px] animate-spin text-red-600" />
+              ) : (
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="currentColor"
+                  className="w-[18px] h-[18px]"
+                >
+                  <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z" />
+                </svg>
+              )}
             </button>
           </div>
         </td>
@@ -244,6 +266,8 @@ export default function Users() {
     const isActive = !user.isBlock;
     const address1 = user.addressLine1 || user.address || "Not Provided";
     const address2 = user.addressLine2 || "";
+    const isRowBlocking = blockingId === id;
+    const isRowDeleting = deletingId === id;
 
     return (
       <div
@@ -267,20 +291,22 @@ export default function Users() {
           </div>
           <button
             onClick={() => handleUserBlock(id)}
-            disabled={isBlocking}
-            className={`w-12 h-6 shrink-0 rounded-full relative transition-colors duration-200 focus:outline-none border-2 ${
-              isActive
-                ? "bg-[#FF8303] border-[#FF8303]"
-                : "bg-gray-100 border-gray-300"
-            } ${isBlocking ? "opacity-50 cursor-not-allowed" : ""}`}
+            disabled={isRowBlocking}
+            className={`w-12 h-6 shrink-0 rounded-full relative transition-colors duration-200 focus:outline-none border-2 ${isActive
+              ? "bg-[#FF8303] border-[#FF8303]"
+              : "bg-gray-100 border-gray-300"
+              } ${isRowBlocking ? "opacity-75 cursor-not-allowed" : ""}`}
           >
             <span
-              className={`absolute top-[2px] left-[2px] w-4 h-4 rounded-full transition-transform duration-200 ${
-                isActive
-                  ? "bg-white translate-x-6"
-                  : "bg-gray-400 translate-x-0"
-              }`}
-            />
+              className={`absolute top-[2px] left-[2px] w-4 h-4 rounded-full transition-transform duration-200 flex items-center justify-center ${isActive
+                ? "bg-white translate-x-6 text-[#FF8303]"
+                : "bg-gray-400 translate-x-0 text-white"
+                }`}
+            >
+              {isRowBlocking && (
+                <Loader2 className="w-2.5 h-2.5 animate-spin" />
+              )}
+            </span>
           </button>
         </div>
 
@@ -337,16 +363,20 @@ export default function Users() {
           </button>
           <button
             onClick={() => handleDeleteUser(id)}
-            disabled={deleteLoding}
+            disabled={isRowDeleting}
             className="text-red-600 transition-transform active:scale-95 focus:outline-none flex flex-col items-center disabled:opacity-50"
           >
-            <svg
-              viewBox="0 0 24 24"
-              fill="currentColor"
-              className="w-5 h-5 mb-1"
-            >
-              <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z" />
-            </svg>
+            {isRowDeleting ? (
+              <Loader2 className="w-5 h-5 mb-1 animate-spin text-red-600" />
+            ) : (
+              <svg
+                viewBox="0 0 24 24"
+                fill="currentColor"
+                className="w-5 h-5 mb-1"
+              >
+                <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z" />
+              </svg>
+            )}
             <span className="text-[10px] font-bold">Delete</span>
           </button>
         </div>
@@ -354,13 +384,15 @@ export default function Users() {
     );
   };
 
-  const totalUsersCount = users.length;
+  const totalUsersCount = users.filter((user, idx) => user.isDeleted === false).length;
+  const totalUserBlockCount = users.filter((user, idx) => user.isBlock === true).length;
+  const totalUserDeleteCount = users.filter((user, idx) => user.isDeleted === true).length;
 
   return (
     <div className="w-auto lg:-mx-4 xl:-mx-8 space-y-6">
       {/* Header Section */}
       <div>
-        <h1 className="text-3xl font-bold text-[#041A40] mb-1">Manage Users</h1>
+        <h1 className="text-3xl font-bold text-[#041A40] mb-1 ">Manage Users</h1>
         <p className="text-gray-600 font-bold text-sm">
           Manage citizen accounts, verifications and access.
         </p>
@@ -368,7 +400,7 @@ export default function Users() {
 
       {/* Stat Cards & Actions */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-end space-y-6 md:space-y-0">
-        <div className="flex flex-col gap-4 w-full md:flex-row md:gap-4 md:w-auto">
+        <div className="flex flex-col gap-4 w-full flex-wrap md:flex-row md:gap-4 md:w-auto">
           <div className="w-full md:w-[200px]">
             <StatCard
               title="Total Users"
@@ -382,8 +414,18 @@ export default function Users() {
           <div className="w-full md:w-[200px]">
             <StatCard
               title="Blocked Users"
-              value="0"
+              value={totalUserBlockCount}
               icon={Ban}
+              iconBgColor="bg-red-500"
+              trend=""
+              trendText="Suspended accounts"
+            />
+          </div>
+          <div className="w-full md:w-[200px]">
+            <StatCard
+              title="Deleted Users"
+              value={totalUserDeleteCount}
+              icon={UserX}
               iconBgColor="bg-red-500"
               trend=""
               trendText="Suspended accounts"
@@ -458,11 +500,10 @@ export default function Users() {
               <button
                 key={page}
                 onClick={() => handlePageChange(page)}
-                className={`px-3 py-1.5 rounded-lg text-sm font-bold ${
-                  currentPage === page
-                    ? "bg-[#FF8303] text-white"
-                    : "border border-gray-200 text-[#041A40] hover:bg-gray-100"
-                }`}
+                className={`px-3 py-1.5 rounded-lg text-sm font-bold ${currentPage === page
+                  ? "bg-[#FF8303] text-white"
+                  : "border border-gray-200 text-[#041A40] hover:bg-gray-100"
+                  }`}
               >
                 {page}
               </button>

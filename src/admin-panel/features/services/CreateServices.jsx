@@ -415,42 +415,31 @@ export default function CreateServices() {
     try {
       const hasSubService = Boolean(subService && subService.trim() !== "");
 
+      const fd = new FormData();
+
+      // Send as JSON strings (keep this approach)
+      fd.append("name", JSON.stringify(name));
+      fd.append("description", JSON.stringify(description));
+      fd.append("price", price);
+      fd.append("processingTime", JSON.stringify(processingTime));
+      fd.append("documents", JSON.stringify(cleanedDocuments));
+      fd.append("formFields", JSON.stringify(cleanedFormFields));
+      fd.append("isActive", String(isActive));
+      fd.append("displayOrder", displayOrder);
+      fd.append("whatsappTemplate", JSON.stringify(whatsappTemplate));
+      if (hasSubService) fd.append("subService", subService);
+      fd.append("option", JSON.stringify(option));
+      fd.append("question", JSON.stringify(question));
+
+      // Only append icon if a new file was selected
+      if (iconFile) {
+        fd.append("iconFile", iconFile);
+      }
+
       if (isEditMode) {
-        const jsonPayload = {
-          name,
-          description,
-          price: Number(price),
-          processingTime,
-          documents: cleanedDocuments,
-          formFields: cleanedFormFields,
-          isActive,
-          displayOrder: Number(displayOrder),
-          whatsappTemplate,
-          option,
-          question,
-          // ✅ only send subService when one is actually selected, otherwise
-          // omit the key entirely so Mongoose doesn't try to cast "" to ObjectId
-          ...(hasSubService ? { subService } : {}),
-        };
-        await updateService({ id: editingService._id, body: jsonPayload }).unwrap();
+        await updateService({ id: editingService._id, body: fd }).unwrap();
         toast.success("Service updated successfully!");
       } else {
-        const fd = new FormData();
-        fd.append("name", JSON.stringify(name));
-        fd.append("description", JSON.stringify(description));
-        fd.append("price", price);
-        fd.append("processingTime", JSON.stringify(processingTime));
-        fd.append("documents", JSON.stringify(cleanedDocuments));
-        fd.append("formFields", JSON.stringify(cleanedFormFields));
-        fd.append("isActive", String(isActive));
-        fd.append("displayOrder", displayOrder);
-        fd.append("whatsappTemplate", JSON.stringify(whatsappTemplate));
-        // ✅ only append subService when one is actually selected
-        if (hasSubService) fd.append("subService", subService);
-        fd.append("option", JSON.stringify(option));
-        fd.append("question", JSON.stringify(question));
-        if (iconFile) fd.append("iconFile", iconFile);
-
         await createService(fd).unwrap();
         toast.success("Service created successfully!");
       }

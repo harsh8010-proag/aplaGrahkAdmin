@@ -21,6 +21,7 @@ export const servicesApi = createApi({
         url: "/v1/services",
         method: "POST",
         body: newService,
+        // Don't set Content-Type header - browser will set it with boundary for FormData
       }),
       invalidatesTags: ["Services"],
     }),
@@ -28,7 +29,8 @@ export const servicesApi = createApi({
       query: ({ id, body }) => ({
         url: `/v1/services/${id}`,
         method: "PUT",
-        body: body, // ✅ FormData directly
+        body: body,
+        // Don't set Content-Type header - browser will set it automatically
       }),
       invalidatesTags: ["Services"],
     }),
@@ -47,16 +49,8 @@ export const servicesApi = createApi({
       }),
       invalidatesTags: ["Services"],
     }),
-    getServiceById: builder.query({
-      query: (id) => ({
-        url: `/v1/services/${id}`,
-        method: "GET",
-      }),
-      providesTags: ["Services"],
-    }),
   }),
 });
-
 export const {
   useGetServicesQuery,
   useGetServiceByIdQuery,
