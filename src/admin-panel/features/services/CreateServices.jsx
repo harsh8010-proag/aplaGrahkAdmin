@@ -96,7 +96,7 @@ function FieldLabel({ children, required }) {
   );
 }
 
-function TriLangInput({ label, value, onChange, textarea = false, required, hint }) {
+function TriLangInput({ label, value, onChange, textarea = false, required, hint, showError = false }) {
   return (
     <div className="space-y-2">
       <div className="flex items-baseline justify-between">
@@ -106,7 +106,7 @@ function TriLangInput({ label, value, onChange, textarea = false, required, hint
       <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
         {LANGS.map((l) => {
           const Comp = textarea ? "textarea" : "input";
-          const missing = required && l.key === "en" && !value.en?.trim();
+          const missing = showError && required && l.key === "en" && !value.en?.trim();
           return (
             <div key={l.key} className="relative">
               <span className="pointer-events-none absolute left-2.5 top-2 text-[10px] font-semibold uppercase tracking-wide text-slate-400">
@@ -124,7 +124,7 @@ function TriLangInput({ label, value, onChange, textarea = false, required, hint
           );
         })}
       </div>
-      {required && !value.en?.trim() && (
+      {showError && required && !value.en?.trim() && (
         <p className="text-xs text-red-500">English value is required.</p>
       )}
     </div>
@@ -268,7 +268,6 @@ export default function CreateServices() {
 
   useEffect(() => {
     if (!editingService) return;
-
     setName(editingService.name || emptyTri);
     setDescription(editingService.description || emptyTri);
     setPrice(String(editingService.price ?? ""));
@@ -276,7 +275,7 @@ export default function CreateServices() {
     setIsActive(editingService.isActive ?? true);
     setDisplayOrder(String(editingService.displayOrder ?? "1"));
     setWhatsappTemplate(editingService.whatsappTemplate || emptyTri);
-    setSubService(editingService.subService || "");
+    setSubService(editingService.subService?._id || editingService.subService || "");
 
     setOption({
       name: { ...emptyTri, ...(editingService.option?.name || {}) },
@@ -413,11 +412,15 @@ export default function CreateServices() {
     );
 
     try {
-      const hasSubService = Boolean(subService && subService.trim() !== "");
+      // ✅ FIX: Extract subService ID safely and check properly
+      const subServiceId = typeof subService === 'object' ? subService?._id : subService;
+      const hasSubService = subServiceId &&
+        typeof subServiceId === 'string' &&
+        subServiceId.trim() !== "";
 
       const fd = new FormData();
 
-      // Send as JSON strings (keep this approach)
+      // Send as JSON strings
       fd.append("name", JSON.stringify(name));
       fd.append("description", JSON.stringify(description));
       fd.append("price", price);
@@ -427,7 +430,12 @@ export default function CreateServices() {
       fd.append("isActive", String(isActive));
       fd.append("displayOrder", displayOrder);
       fd.append("whatsappTemplate", JSON.stringify(whatsappTemplate));
-      if (hasSubService) fd.append("subService", subService);
+
+      // ✅ FIX: Use subServiceId instead of subService
+      if (hasSubService) {
+        fd.append("subService", subServiceId.trim());
+      }
+
       fd.append("option", JSON.stringify(option));
       fd.append("question", JSON.stringify(question));
 
@@ -491,14 +499,16 @@ export default function CreateServices() {
               label="Description"
               value={description}
               onChange={setDescription}
+              showError={submitAttempted}
               textarea
               required
             />
-            <TriLangInput label="Processing Time" value={processingTime} onChange={setProcessingTime} />
+            <TriLangInput label="Processing Time" value={processingTime} onChange={setProcessingTime} showError={submitAttempted} />
             <TriLangInput
               label="WhatsApp Template"
               value={whatsappTemplate}
               onChange={setWhatsappTemplate}
+              showError={submitAttempted}
               textarea
               hint="Use {{name}} and {{link}} as placeholders"
             />
@@ -509,6 +519,7 @@ export default function CreateServices() {
         <SectionCard
           icon={Settings2}
           title="Pricing & settings"
+
           description="Cost, ordering, visibility and category."
         >
           <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
@@ -518,6 +529,7 @@ export default function CreateServices() {
                 type="number"
                 min="0"
                 value={price}
+
                 onChange={(e) => setPrice(e.target.value)}
                 placeholder="e.g. ₹200 "
               />
@@ -615,6 +627,7 @@ export default function CreateServices() {
               value={option.description}
               onChange={(v) => setOption({ ...option, description: v })}
               textarea
+              showError={submitAttempted}
             />
           </div>
         </SectionCard>
@@ -626,12 +639,14 @@ export default function CreateServices() {
               label="Question"
               value={question.title}
               onChange={(v) => setQuestion({ ...question, title: v })}
+              showError={submitAttempted}
             />
             <TriLangInput
               label="Answer"
               value={question.description}
               onChange={(v) => setQuestion({ ...question, description: v })}
               textarea
+              showError={submitAttempted}
             />
           </div>
         </SectionCard>
@@ -768,11 +783,13 @@ export default function CreateServices() {
                     label="Label"
                     value={field.label}
                     onChange={(v) => updateField(idx, { label: v })}
+                    showError={submitAttempted}
                   />
                   <TriLangInput
                     label="Placeholder"
                     value={field.placeholder}
                     onChange={(v) => updateField(idx, { placeholder: v })}
+                    showError={submitAttempted}
                   />
 
                   {OPTION_BASED_TYPES.includes(field.inputType) && (

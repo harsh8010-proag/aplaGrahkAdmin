@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   FileText,
@@ -11,6 +11,7 @@ import {
   User,
 } from "lucide-react";
 import { FaFileCircleCheck } from "react-icons/fa6";
+import wsService from "../../../utils/websocketService";
 import StatCard from "../../../shared/components/StatCard";
 import Button from "../../../shared/components/Button";
 import SearchInput from "../../../shared/components/SearchInput";
@@ -101,6 +102,22 @@ const SkeletonStatCard = () => (
 
 export default function Applications() {
   const navigate = useNavigate();
+  const [newAppNotification, setNewAppNotification] = useState(false);
+  const [newAppCount, setNewAppCount] = useState(0);
+
+  // ── Real-time WebSocket listener for new application notifications ──
+  useEffect(() => {
+    wsService.connect();
+
+    const unsubscribe = wsService.addListener("NEW_APPLICATION", (data) => {
+      setNewAppNotification(true);
+      setNewAppCount((prev) => prev + 1);
+      // Auto-hide the banner after 8 seconds
+      setTimeout(() => setNewAppNotification(false), 8000);
+    });
+
+    return () => unsubscribe();
+  }, []);
 
   const columns = [
     "Application ID",
@@ -566,12 +583,43 @@ export default function Applications() {
   return (
     <div className="w-auto lg:-mx-4 xl:-mx-8 space-y-6">
       {/* Header Section */}
-      <div>
-        <h1 className="text-3xl font-bold text-[#041A40] mb-1">Applications</h1>
-        <p className="text-gray-600 font-bold text-sm">
-          Review, verify and process citizen service applications.
-        </p>
+      <div className="flex items-start justify-between flex-wrap gap-3">
+        <div>
+          <div className="flex items-center gap-3">
+            <h1 className="text-3xl font-bold text-[#041A40]">Applications</h1>
+            {/* Live badge — always visible while WS is expected to be active */}
+            <span className="flex items-center gap-1.5 bg-green-50 border border-green-200 text-green-700 text-[11px] font-bold px-2.5 py-1 rounded-full">
+              <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse inline-block" />
+              LIVE
+            </span>
+            {newAppCount > 0 && (
+              <span className="flex items-center justify-center bg-red-500 text-white text-[10px] font-black w-5 h-5 rounded-full">
+                {newAppCount > 9 ? "9+" : newAppCount}
+              </span>
+            )}
+          </div>
+          <p className="text-gray-600 font-bold text-sm mt-1">
+            Review, verify and process citizen service applications.
+          </p>
+        </div>
       </div>
+
+      {/* Real-time new application toast banner */}
+      {newAppNotification && (
+        <div className="flex items-center justify-between bg-blue-50 border border-blue-200 text-blue-800 px-4 py-3 rounded-xl text-sm font-semibold shadow-sm animate-pulse">
+          <div className="flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-blue-500 inline-block" />
+            🔔 A new application has been submitted! The list has been updated automatically.
+          </div>
+          <button
+            onClick={() => setNewAppNotification(false)}
+            className="text-blue-500 hover:text-blue-800 font-bold text-base leading-none ml-4"
+            aria-label="Dismiss"
+          >
+            ✕
+          </button>
+        </div>
+      )}
 
       {/* Stat Cards & Actions */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5  gap-2">

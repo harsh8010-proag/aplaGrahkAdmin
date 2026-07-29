@@ -311,8 +311,7 @@ const ServiceDetails = () => {
 
         <div className="text-center py-5">
           <button className="text-blue-600 font-medium">
-            View All Applications
-          </button>
+            View All           </button>
         </div>
       </div>
     </div>
