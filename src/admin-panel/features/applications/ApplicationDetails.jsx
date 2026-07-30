@@ -145,6 +145,38 @@ export default function ApplicationDetails() {
     "In Progress": "bg-[#DBEAFE] text-[#3B82F6]",
   };
 
+  const getDocState = (status) => {
+    const normalized = (status || "").toString().trim().toLowerCase();
+
+    if (normalized === "approved") {
+      return {
+        label: "Approved",
+        cardClass: "bg-[#F0FDF4] border-[#BBF7D0]",
+        badgeClass: "bg-[#DCFCE7] text-[#16A34A]",
+        iconClass: "bg-[#22C55E] text-white",
+        icon: Check,
+      };
+    }
+
+    if (normalized === "rejected") {
+      return {
+        label: "Rejected",
+        cardClass: "bg-[#FEF2F2] border-[#FECACA]",
+        badgeClass: "bg-[#FEE2E2] text-[#DC2626]",
+        iconClass: "bg-[#EF4444] text-white",
+        icon: X,
+      };
+    }
+
+    return {
+      label: "Pending",
+      cardClass: "bg-[#F4F7FE] border-gray-50",
+      badgeClass: "bg-[#FFEDD5] text-[#F97316]",
+      iconClass: "bg-[#F59E0B] text-white",
+      icon: Info,
+    };
+  };
+
   const StatusBadge = ({ status }) => (
     <span
       className={`px-3.5 py-1 rounded-full text-xs font-bold inline-flex justify-center ${statusStyles[status] || "bg-gray-100 text-gray-500"}`}
@@ -152,6 +184,88 @@ export default function ApplicationDetails() {
       {status || "N/A"}
     </span>
   );
+
+  const renderDocumentCard = (doc) => {
+    const docState = getDocState(doc.status);
+    const DocIcon = docState.icon;
+
+    return (
+      <div
+        key={doc._id}
+        className={`p-4 rounded-2xl flex items-start space-x-4 w-full sm:w-[320px] border ${docState.cardClass}`}
+      >
+        <div
+          className={`w-6 h-6 rounded-xl flex items-center justify-center shrink-0 ${docState.iconClass}`}
+        >
+          <DocIcon className="w-4 h-4" />
+        </div>
+        <div className="flex-1">
+          <p className="font-bold text-[#041A40] text-sm mb-1">
+            {formatLabel(doc.fieldKey)}
+          </p>
+          <p className="text-xs text-gray-400 mb-4">
+            uploaded on {formatDate(app.createdAt)}
+          </p>
+          <div className="mb-4">
+            <span
+              className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold ${docState.badgeClass}`}
+            >
+              {doc.status?.toLowerCase() === "approved" ? (
+                <Check className="w-3.5 h-3.5" strokeWidth={3} />
+              ) : doc.status?.toLowerCase() === "rejected" ? (
+                <X className="w-3.5 h-3.5" strokeWidth={3} />
+              ) : (
+                <Info className="w-3.5 h-3.5" strokeWidth={3} />
+              )}
+              {docState.label}
+            </span>
+          </div>
+          <div className="flex items-center space-x-4">
+            <a
+              href={doc.fileUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-[#041A40] hover:scale-110 transition-transform focus:outline-none"
+            >
+              <svg
+                viewBox="0 0 24 24"
+                fill="currentColor"
+                className="w-[18px] h-[18px]"
+              >
+                <path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z" />
+              </svg>
+            </a>
+            {doc.status === "pending" && (
+              <>
+                <button
+                  onClick={() =>
+                    handleDocumentStatus(doc.fieldKey, "approved")
+                  }
+                  className="w-5 h-5 rounded-full bg-[#22C55E] text-white flex items-center justify-center hover:scale-110 transition-transform"
+                >
+                  <Check className="w-3 h-3" strokeWidth={3} />
+                </button>
+
+                <button
+                  onClick={() =>
+                    handleDocumentStatus(doc.fieldKey, "rejected")
+                  }
+                  className="w-5 h-5 rounded-full bg-[#EF4444] text-white flex items-center justify-center hover:scale-110 transition-transform"
+                >
+                  <X className="w-3 h-3" strokeWidth={3} />
+                </button>
+              </>
+            )}
+            <button
+              onClick={() => handleDownload(doc.fileUrl, formatLabel(doc.fieldKey))}
+            >
+              <Download className="w-[18px] h-[18px]" />
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  };
 
   const handleDownload = async (url, fileName) => {
     try {
@@ -396,77 +510,7 @@ export default function ApplicationDetails() {
               <div className="space-y-6">
                 <div className="flex flex-wrap gap-4">
                   {documents.length > 0 ? (
-                    documents.map((doc) => (
-                      <div
-                        key={doc._id}
-                        className="p-4 border border-gray-50 bg-[#F4F7FE] rounded-2xl flex items-start space-x-4 w-full sm:w-[320px]"
-                      >
-                        <div className="w-10 h-10 bg-[#E1E7F5] text-[#041A40] rounded-xl flex items-center justify-center shrink-0">
-                          <FileText className="w-5 h-5" />
-                        </div>
-                        <div className="flex-1">
-                          <p className="font-bold text-[#041A40] text-sm mb-1">
-                            {formatLabel(doc.fieldKey)}
-                          </p>
-                          <p className="text-xs text-gray-400 mb-4">
-                            uploaded on {formatDate(app.createdAt)}
-                          </p>
-                          <div className="flex items-center space-x-4">
-                            <a
-                              href={doc.fileUrl}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-[#041A40] hover:scale-110 transition-transform focus:outline-none"
-                            >
-                              <svg
-                                viewBox="0 0 24 24"
-                                fill="currentColor"
-                                className="w-[18px] h-[18px]"
-                              >
-                                <path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z" />
-                              </svg>
-                            </a>
-                            {doc.status === "pending" && (
-                              <>
-                                <button
-                                  onClick={() =>
-                                    handleDocumentStatus(
-                                      doc.fieldKey,
-                                      "approved",
-                                    )
-                                  }
-                                  className="w-5 h-5 rounded-full bg-[#22C55E] text-white flex items-center justify-center hover:scale-110 transition-transform"
-                                >
-                                  <Check className="w-3 h-3" strokeWidth={3} />
-                                </button>
-
-                                <button
-                                  onClick={() =>
-                                    handleDocumentStatus(
-                                      doc.fieldKey,
-                                      "rejected",
-                                    )
-                                  }
-                                  className="w-5 h-5 rounded-full bg-[#EF4444] text-white flex items-center justify-center hover:scale-110 transition-transform"
-                                >
-                                  <X className="w-3 h-3" strokeWidth={3} />
-                                </button>
-                              </>
-                            )}
-                            <button
-                              onClick={() =>
-                                handleDownload(
-                                  doc.fileUrl,
-                                  formatLabel(doc.fieldKey),
-                                )
-                              }
-                            >
-                              <Download className="w-[18px] h-[18px]" />
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    ))
+                    documents.map((doc) => renderDocumentCard(doc))
                   ) : (
                     <p className="text-gray-400 text-sm">
                       No documents uploaded.

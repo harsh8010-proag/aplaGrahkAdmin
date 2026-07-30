@@ -3,7 +3,7 @@ import { NavLink, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import ConfirmationModal from "../../shared/components/ConfirmationModal";
 import { useLogoutMutation } from "../../redux/api/authApi";
-import { HiDocumentPlus } from "react-icons/hi2";
+import { HiDocumentPlus, HiChatBubbleLeftRight } from "react-icons/hi2";
 
 const navItems = [
   {
@@ -20,6 +20,7 @@ const navItems = [
   { name: "Document", icon: HiDocumentPlus, path: "/document" },
   { name: "Services", icon: "/Icons/service%20icon.svg", path: "/services" },
   { name: "Payments", icon: "/Icons/payment%20icon.svg", path: "/payments" },
+  { name: "Support", icon: HiChatBubbleLeftRight, path: "/support" },
 ];
 
 export default function Sidebar({ onNavigate }) {
@@ -46,7 +47,7 @@ export default function Sidebar({ onNavigate }) {
   };
 
   return (
-    <div className="w-full h-full bg-[#041A40] flex flex-col items-center pt-2 pb-4 lg:pb-6 z-20 rounded-2xl">
+    <div className="w-full h-full bg-[#041A40] flex flex-col items-center pt-2 pb-4 lg:pb-6 z-20 rounded-2xl overflow-y-auto">
       <div className="w-full flex flex-col items-center">
         {navItems.map((item) => (
           <NavLink
@@ -54,20 +55,20 @@ export default function Sidebar({ onNavigate }) {
             to={item.path}
             onClick={onNavigate}
             className={({ isActive }) =>
-              `flex flex-col items-center justify-center w-[80px] lg:w-[90px] py-2 lg:py-3 rounded-2xl transition-all ${
+              `flex flex-col items-center justify-center w-[78px] lg:w-[90px] py-2 lg:py-3 rounded-2xl transition-all ${
                 isActive ? "text-[#F97316]" : "text-white hover:bg-white/10"
               }`
             }
           >
             {({ isActive }) => (
               <>
-               {typeof item.icon === "string" ? (
-  <span
-    className={`sidebar-icon w-6 h-6 lg:w-8 lg:h-8 mb-1 lg:mb-2 transition-all ${
-      isActive ? "sidebar-icon-active" : ""
-    }`}
-    style={{ "--icon-url": `url(${item.icon})` }}
-  />
+                {typeof item.icon === "string" ? (
+                  <span
+                    className={`sidebar-icon w-6 h-6 lg:w-8 lg:h-8 mb-1 lg:mb-2 transition-all ${
+                      isActive ? "sidebar-icon-active" : ""
+                    }`}
+                    style={{ "--icon-url": `url(${item.icon})` }}
+                  />
                 ) : (
                   <item.icon
                     className={`w-6 h-6 lg:w-8 lg:h-8 mb-1 lg:mb-2 ${

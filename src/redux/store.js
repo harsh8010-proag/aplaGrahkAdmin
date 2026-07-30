@@ -4,6 +4,7 @@ import { servicesApi } from './api/servicesApi';
 import { documentApi } from './api/documentApi';
 import { applicationsApi } from './api/applicationsApi';
 import { usersApi } from './api/usersApi';
+import { contactsApi } from './api/contactsApi';
 
 export const store = configureStore({
   reducer: {
@@ -11,7 +12,8 @@ export const store = configureStore({
     [servicesApi.reducerPath]: servicesApi.reducer,
     [documentApi.reducerPath]: documentApi.reducer,
     [applicationsApi.reducerPath]: applicationsApi.reducer,
-    [usersApi.reducerPath]: usersApi.reducer
+    [usersApi.reducerPath]: usersApi.reducer,
+    [contactsApi.reducerPath]: contactsApi.reducer
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware().concat(
@@ -19,7 +21,8 @@ export const store = configureStore({
         servicesApi.middleware,
         documentApi.middleware,
       applicationsApi.middleware,
-    usersApi.middleware),
+    usersApi.middleware,
+    contactsApi.middleware),
 
         
         

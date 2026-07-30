@@ -1,7 +1,7 @@
 export default function Applications({ applications }) {
 
 
- 
+
 
   if (!applications || applications.length === 0) {
     return (
@@ -46,26 +46,24 @@ export default function Applications({ applications }) {
                 </td>
                 <td className="px-6 py-4">
                   <span
-                    className={`px-4 py-1.5 rounded-full inline-flex items-center justify-center font-bold text-xs ${
-                      app?.payment === "Success"
-                        ? "bg-[#E6F9F0] text-[#00A962]"
-                        : app?.payment === "Pending"
-                          ? "bg-[#FFEAD6] text-[#FF8303]"
-                          : "bg-[#FEECEB] text-[#D93025]"
-                    }`}
+                    className={`px-4 py-1.5 rounded-full inline-flex items-center justify-center font-bold text-xs ${app?.paymentStatus === "approved"
+                      ? "bg-[#E6F9F0] text-[#00A962]"
+                      : app?.paymentStatus === "pending"
+                        ? "bg-[#FFEAD6] text-[#FF8303]"
+                        : "bg-[#FEECEB] text-[#D93025]"
+                      }`}
                   >
-                    {app.payment || "N/A"}
+                    {app?.paymentStatus || "N/A"}
                   </span>
                 </td>
                 <td className="px-6 py-4">
                   <span
-                    className={`px-4 py-1.5 rounded-full inline-flex items-center justify-center font-bold text-xs ${
-                      app?.status === "Approved"
-                        ? "bg-[#E6F9F0] text-[#00A962]"
-                        : app?.status === "Pending"
-                          ? "bg-[#FFEAD6] text-[#FF8303]"
-                          : "bg-[#FFEAD6] text-[#FF8303]"
-                    }`}
+                    className={`px-4 py-1.5 rounded-full inline-flex items-center justify-center font-bold text-xs ${app?.status === "Approved"
+                      ? "bg-[#E6F9F0] text-[#00A962] "
+                      : app?.status === "Pending"
+                        ? "bg-[#FFEAD6]  text-[#FF8303]"
+                        : "bg-[#FFEAD6] text-[#FF8303]"
+                      }`}
                   >
                     {app?.status}
                   </span>
@@ -124,24 +122,22 @@ export default function Applications({ applications }) {
               </div>
               <div className="flex items-center space-x-2">
                 <span
-                  className={`px-3 py-1 rounded-full font-bold text-[10px] ${
-                    app?.payment === "Success"
-                      ? "bg-[#E6F9F0] text-[#00A962]"
-                      : app?.payment === "Pending"
-                        ? "bg-[#FFEAD6] text-[#FF8303]"
-                        : "bg-[#FEECEB] text-[#D93025]"
-                  }`}
+                  className={`px-3 py-1 rounded-full font-bold text-[10px] ${app?.paymentStatus === "approved"
+                    ? "bg-[#E6F9F0] text-[#00A962]"
+                    : app?.paymentStatus === "pending"
+                      ? "bg-[#FFEAD6] text-[#FF8303]"
+                      : "bg-[#FEECEB] text-[#D93025]"
+                    }`}
                 >
-                  {app?.payment}
+                  {app?.paymentStatus}
                 </span>
                 <span
-                  className={`px-3 py-1 rounded-full font-bold text-[10px] ${
-                    app?.status === "Approved"
-                      ? "bg-[#E6F9F0] text-[#00A962]"
-                      : app?.status === "Pending"
-                        ? "bg-[#FFEAD6] text-[#FF8303]"
-                        : "bg-[#FFEAD6] text-[#FF8303]"
-                  }`}
+                  className={`px-3 py-1 rounded-full font-bold text-[10px] ${app?.status === "Approved"
+                    ? "bg-[#E6F9F0] text-[#00A962]"
+                    : app?.status === "Pending"
+                      ? "bg-[#FFEAD6] text-[#FF8303]"
+                      : "bg-[#FFEAD6] text-[#FF8303]"
+                    }`}
                 >
                   {app?.status}
                 </span>

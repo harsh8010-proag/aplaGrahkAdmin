@@ -29,7 +29,7 @@ class WebSocketService {
 
     this._intentionalClose = false;
     console.log(`🔌 [WS] Connecting to ${WS_URL}`);
-    this._ws = new WebSocket(WS_URL);
+    this._ws = new WebSocket(`${WS_URL}?role=admin`);
 
     this._ws.onopen = () => {
       console.log("✅ [WS] Connected to backend WebSocket");

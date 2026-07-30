@@ -317,20 +317,21 @@ export default function Applications() {
   };
 
   const getPaymentBadge = (payment) => {
+    console.log(payment)
     switch (payment) {
-      case "Pending":
+      case "pending":
         return (
           <span className="px-3.5 py-1 bg-[#FFEDD5] text-[#F97316] rounded-full text-xs font-bold w-[80px] inline-flex justify-center">
             Pending
           </span>
         );
-      case "Success":
+      case "approved":
         return (
           <span className="px-3.5 py-1 bg-[#DCFCE7] text-[#22C55E] rounded-full text-xs font-bold w-[80px] inline-flex justify-center">
             Success
           </span>
         );
-      case "Failed":
+      case "rejected":
         return (
           <span className="px-3.5 py-1 bg-[#FEE2E2] text-[#EF4444] rounded-full text-xs font-bold w-[80px] inline-flex justify-center">
             Failed
@@ -417,7 +418,7 @@ export default function Applications() {
           })}
         </td>
         <td className="px-6 py-4">
-          {getPaymentBadge(app.payment || "Pending")}
+          {getPaymentBadge(app?.paymentStatus || "pending")}
         </td>
         <td className="px-6 py-4">{getStatusBadge(app.status)}</td>
         <td className="px-6 py-4">
@@ -529,7 +530,7 @@ export default function Applications() {
             </p>
           </div>
           <div className="flex flex-col items-end space-y-2">
-            {getPaymentBadge(app.payment || "Pending")}
+            {getPaymentBadge(app?.paymentStatus || "Pending")}
             {getStatusBadge(app.status)}
           </div>
         </div>

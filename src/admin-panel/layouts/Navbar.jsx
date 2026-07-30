@@ -1,6 +1,6 @@
 import { Link, useNavigate } from "react-router-dom";
 import React, { useState } from "react";
-import { CircleChevronRight } from 'lucide-react';
+import { CircleChevronRight, Headphones } from 'lucide-react';
 import { FiLogOut } from "react-icons/fi";
 import { useGetAdminQuery } from "../../redux/api/authApi";
 import DynamicInputModal from "../../shared/models/addServiceModel";
@@ -48,19 +48,33 @@ export default function Navbar({ onLogoClick }) {
       </Link>
 
       <div className="flex-1 flex items-center justify-between bg-gray-100 rounded-xl px-3 md:px-4 py-2 border border-gray-200 shadow-sm">
-        <button
-          onClick={() => setIsModalOpen(true)}
-          className="bg-[#FF8303] hover:bg-[#e67400] text-white 
-          w-12 h-12 md:w-auto md:h-auto
-          md:px-5 md:py-2 
-          rounded-full font-bold shadow-sm shadow-orange-500/20 
-          transition-all active:scale-95 
-          flex items-center justify-center text-sm md:text-base"
-        >
-          <span className="text-2xl md:text-lg leading-none md:mr-1">+</span>
+        <div className="flex items-center gap-2 md:gap-3">
+          <button
+            onClick={() => navigate("/support")}
+            className="bg-[#E1F5FE] hover:bg-[#cdeefd] text-[#041A40] 
+            w-12 h-12 md:w-auto md:h-auto
+            md:px-4 md:py-2 
+            rounded-full font-bold shadow-sm 
+            transition-all active:scale-95 
+            flex items-center justify-center text-sm md:text-base"
+          >
+            <Headphones size={18} className="md:mr-2" />
+            <span className="hidden md:inline">Support</span>
+          </button>
 
-          <span className="hidden md:inline">Quick Add Service</span>
-        </button>
+          <button
+            onClick={() => setIsModalOpen(true)}
+            className="bg-[#FF8303] hover:bg-[#e67400] text-white 
+            w-12 h-12 md:w-auto md:h-auto
+            md:px-5 md:py-2 
+            rounded-full font-bold shadow-sm shadow-orange-500/20 
+            transition-all active:scale-95 
+            flex items-center justify-center text-sm md:text-base"
+          >
+            <span className="text-2xl md:text-lg leading-none md:mr-1">+</span>
+            <span className="hidden md:inline">Quick Add Service</span>
+          </button>
+        </div>
 
         <div className="relative group flex items-center space-x-2 md:space-x-3 pl-2 md:pl-4 cursor-pointer">
           <div className="w-9 h-9 md:w-10 md:h-10 bg-[#041A40] rounded-full flex items-center justify-center text-white font-bold text-xs md:text-sm uppercase">

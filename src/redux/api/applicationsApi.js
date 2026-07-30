@@ -1,12 +1,10 @@
-import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
+import { createApi } from "@reduxjs/toolkit/query/react";
 import wsService from "../../utils/websocketService";
+import { baseQueryWithReauth } from "../../middleware/baseQueryMiddleware";
 
 export const applicationsApi = createApi({
   reducerPath: "applicationsApi",
-  baseQuery: fetchBaseQuery({
-    baseUrl: import.meta.env.VITE_BACKEND_URL,
-    credentials: "include",
-  }),
+  baseQuery: baseQueryWithReauth,
   tagTypes: ["Applications"],
   endpoints: (builder) => ({
     getAplications: builder.query({
@@ -26,18 +24,29 @@ export const applicationsApi = createApi({
         wsService.connect();
 
         // Subscribe to new-application events
-        const unsubscribe = wsService.addListener(
-          "NEW_APPLICATION",
-          (data) => {
-            console.log("📩 [WS] NEW_APPLICATION received:", data);
-            // Invalidate the Applications tag so RTK Query re-fetches the list
-            dispatch(applicationsApi.util.invalidateTags(["Applications"]));
-          }
-        );
+        const invalidateApplications = (type, data) => {
+          console.log(`📩 [WS] ${type} received:`, data);
+          dispatch(applicationsApi.util.invalidateTags(["Applications"]));
+        };
+
+        const unsubscribers = [
+          wsService.addListener("NEW_APPLICATION", (data) =>
+            invalidateApplications("NEW_APPLICATION", data),
+          ),
+          wsService.addListener("APPLICATION_STATUS_UPDATED", (data) =>
+            invalidateApplications("APPLICATION_STATUS_UPDATED", data),
+          ),
+          wsService.addListener("APPLICATION_DOCUMENT_STATUS_UPDATED", (data) =>
+            invalidateApplications("APPLICATION_DOCUMENT_STATUS_UPDATED", data),
+          ),
+          wsService.addListener("SERVICE_UPDATED", (data) =>
+            invalidateApplications("SERVICE_UPDATED", data),
+          ),
+        ];
 
         // Clean up when the cache entry is removed (no subscribers left)
         await cacheEntryRemoved;
-        unsubscribe();
+        unsubscribers.forEach((unsubscribe) => unsubscribe());
       },
     }),
 
@@ -73,6 +82,7 @@ export const applicationsApi = createApi({
         method: "PATCH",
         body: { status },
       }),
+      invalidatesTags: ["Applications"],
     }),
   }),
 });

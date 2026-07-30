@@ -24,21 +24,21 @@ export default function Login() {
     setError(null);
     try {
       const response = await login({ email, password }).unwrap();
-      console.log('Login API Response:', response);
+
 
       // Aggressively search for the token in common response structures
-const token =
-  response?.token ||
-  response?.data?.token ||
-  response?.accessToken ||
-  response?.data?.accessToken ||
-  response?.access_token ||
-  response?.data?.access_token;
+      const token =
+        response?.token ||
+        response?.data?.token ||
+        response?.accessToken ||
+        response?.data?.accessToken ||
+        response?.access_token ||
+        response?.data?.access_token;
 
       if (token) {
         localStorage.setItem('admin_token', token);
-        console.log(token);
-        
+
+
       } else {
         console.warn('Could not find a token in the login response!', response);
       }

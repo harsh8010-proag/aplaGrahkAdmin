@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   CreditCard,
   XCircle,
@@ -47,6 +48,7 @@ const getInitials = (name) => {
 };
 
 export default function Payments() {
+  const navigate = useNavigate();
   const {
     data: allApplication,
     isLoading,
@@ -65,7 +67,7 @@ export default function Payments() {
   const columns = [
     "Transaction ID",
     "User Name",
-    "Method",
+    "applicationId",
     "Payment",
     "Date",
     "Amount",
@@ -78,15 +80,15 @@ export default function Payments() {
     const apps = allApplication?.applications || [];
 
     return apps.map((app) => {
-      const id = app._id;
+      const id = app._id
       const userName =
         app.userId?.name ||
         app.formData?.applicantName ||
         app.formData?.headOfFamily ||
         "Unknown";
       const phone = app.userId?.mobileNumber || "-";
-      const method = app.paymentMethod || app.method || "-";
-      const amount = app.amount || app.formData?.amount || "-";
+      const applicationId = app._id?.slice(-8).toUpperCase() || app.id || "-";
+      const amount = app.serviceId?.price || app.formData?.amount || "-";
 
       // Payment screenshot: primarily the top-level PaymentImage field,
       // fall back to an uploaded document with fieldKey "paymentScreenshot" if present
@@ -103,7 +105,7 @@ export default function Payments() {
         transactionId: id ? `TXN-${id.slice(-7).toUpperCase()}` : "-",
         userName,
         phone,
-        method,
+        applicationId,
         payment,
         date: formatDate(app.createdAt),
         rawDate: app.createdAt, // kept for sorting
@@ -204,34 +206,34 @@ export default function Payments() {
   // the backend expects ("pending" | "rejected" | "approved") and the current
   // application's _id.
   const handleApprove = async (id) => {
-  try {
-    setUpdatingId(id);
+    try {
+      setUpdatingId(id);
 
-    await updateApplicationPaymentStatus({
-      id,
-      status: "approved",
-    }).unwrap();
+      await updateApplicationPaymentStatus({
+        id,
+        status: "approved",
+      }).unwrap();
 
-    refetch();
-  } finally {
-    setUpdatingId(null);
-  }
-};
+      refetch();
+    } finally {
+      setUpdatingId(null);
+    }
+  };
 
   const handleReject = async (id) => {
-  try {
-    setUpdatingId(id);
+    try {
+      setUpdatingId(id);
 
-    await updateApplicationPaymentStatus({
-      id,
-      status: "rejected",
-    }).unwrap();
+      await updateApplicationPaymentStatus({
+        id,
+        status: "rejected",
+      }).unwrap();
 
-    refetch();
-  } finally {
-    setUpdatingId(null);
-  }
-};
+      refetch();
+    } finally {
+      setUpdatingId(null);
+    }
+  };
 
   // Screenshot cell — just displays the payment screenshot the user uploaded (image or PDF)
   const renderScreenshotCell = (txn) => {
@@ -262,7 +264,7 @@ export default function Payments() {
           />
         )}
         <Eye size={14} />
-        
+
       </a>
     );
   };
@@ -328,11 +330,11 @@ export default function Payments() {
   };
 
   const renderRow = (txn, idx) => (
+
     <tr
       key={txn.id || idx}
-      className={`border-b border-gray-100 hover:bg-gray-50 transition-colors ${
-        idx === paginatedPayments.length - 1 ? "border-none" : ""
-      }`}
+      className={`border-b border-gray-100 hover:bg-gray-50 transition-colors ${idx === paginatedPayments.length - 1 ? "border-none" : ""
+        }`}
     >
       <td className="px-6 py-4 font-bold text-gray-700 whitespace-nowrap">
         {txn.transactionId}
@@ -347,7 +349,14 @@ export default function Payments() {
         </div>
       </td>
       <td className="px-6 py-4 font-bold text-gray-700 whitespace-nowrap">
-        {txn.method}
+        <button
+          type="button"
+          onClick={() => navigate(`/requests/${txn.id}`)}
+          className="text-[#FF8303] hover:text-[#c96500] hover:underline transition-colors"
+          title="Open application details"
+        >
+          {txn.applicationId}
+        </button>
       </td>
       <td className="px-6 py-4 whitespace-nowrap">
         {getPaymentBadge(txn.payment)}
@@ -388,6 +397,19 @@ export default function Payments() {
           {txn.transactionId}
         </div>
       </div>
+
+      <button
+        type="button"
+        onClick={() => navigate(`/requests/${txn.id}`)}
+        className="text-left"
+      >
+        <p className="text-[10px] uppercase tracking-wider text-gray-400 font-bold mb-1">
+          Application ID
+        </p>
+        <p className="text-[#FF8303] font-bold text-sm hover:underline inline-flex">
+          {txn.applicationId}
+        </p>
+      </button>
 
       <div className="flex justify-between items-center bg-gray-50 p-3 rounded-xl border border-gray-100">
         <div>
@@ -446,11 +468,10 @@ export default function Payments() {
             <button
               key={num}
               onClick={() => setCurrentPage(num)}
-              className={`w-8 h-8 flex items-center justify-center rounded-full text-xs font-bold transition-colors ${
-                num === safePage
-                  ? "bg-[#FF8303] text-white"
-                  : "bg-white border border-gray-200 text-gray-600 hover:border-[#FF8303] hover:text-[#FF8303]"
-              }`}
+              className={`w-8 h-8 flex items-center justify-center rounded-full text-xs font-bold transition-colors ${num === safePage
+                ? "bg-[#FF8303] text-white"
+                : "bg-white border border-gray-200 text-gray-600 hover:border-[#FF8303] hover:text-[#FF8303]"
+                }`}
             >
               {num}
             </button>
@@ -515,7 +536,7 @@ export default function Payments() {
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 space-y-4 md:space-y-0">
           <div className="flex flex-col gap-3">
             <h2 className="text-xl font-bold text-[#041A40]">
-              All Applications
+              All Payments
             </h2>
 
             {/* Status filter tabs */}
@@ -534,15 +555,15 @@ export default function Payments() {
                     style={
                       isActive
                         ? {
-                            backgroundColor: tab.bg,
-                            color: tab.color,
-                            borderColor: tab.color,
-                          }
+                          backgroundColor: tab.bg,
+                          color: tab.color,
+                          borderColor: tab.color,
+                        }
                         : {
-                            backgroundColor: "white",
-                            color: "#6B7280",
-                            borderColor: "#E5E7EB",
-                          }
+                          backgroundColor: "white",
+                          color: "#6B7280",
+                          borderColor: "#E5E7EB",
+                        }
                     }
                   >
                     {tab.label} ({tab.count})

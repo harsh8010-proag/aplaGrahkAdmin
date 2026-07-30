@@ -13,6 +13,7 @@ const ApplicationDetails = lazy(() => import('../admin-panel/features/applicatio
 const Services = lazy(() => import('../admin-panel/features/services/Services'))
 const Payments = lazy(() => import('../admin-panel/features/payments/Payments'))
 const DocumentCards = lazy(() => import('../admin-panel/features/document/DocumentCards'))
+const Support = lazy(() => import('../admin-panel/features/support/Support'))
 const AddDocumentModal = lazy(() => import('../admin-panel/features/document/AddDocument'))
 const ServiceDetails = lazy(() => import('../admin-panel/features/services/ServiceDetails'))
 const CreateServices = lazy(() => import("../admin-panel/features/services/CreateServices"))
@@ -47,6 +48,7 @@ export default function AppRoutes() {
           <Route path="document" element={<DocumentCards />} />
           <Route path="document/add" element={<AddDocumentModal />} />
           <Route path="payments" element={<Payments />} />
+          <Route path="support" element={<Support />} />
           <Route path="services/:id" element={<ServiceDetails />} />
           <Route path='add-service' element={<CreateServices />}/>
         </Route>
