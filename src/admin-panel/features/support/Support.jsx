@@ -60,6 +60,7 @@ export default function Support() {
       refetch();
     } finally {
       setUpdatingId(null);
+      setSelectedContact(null)
     }
   };
 

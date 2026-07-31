@@ -224,6 +224,12 @@ export default function Applications() {
   const [statusFilter, setStatusFilter] = useState("All Status");
   const [searchTerm, setSearchTerm] = useState("");
 
+  const normalizeSearch = (value) =>
+    String(value || "")
+      .toLowerCase()
+      .replace(/#/g, "")
+      .trim();
+
   const filteredApplications = sortedApplications.filter((app) => {
     const applicantName =
       app.formData?.name ||
@@ -231,16 +237,17 @@ export default function Applications() {
       app.userId?.name ||
       "";
     const phone = app.formData?.mobileNumber || app.formData?.phone || "";
-    const idStr = app._id || "";
+    const idStr = `#${app._id?.slice(-8).toUpperCase() || ""}`;
+    const normalizedSearch = normalizeSearch(searchTerm);
 
     const matchesStatus =
       statusFilter === "All Status" || app.status === statusFilter;
 
     const matchesSearch =
-      searchTerm.trim() === "" ||
-      applicantName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      phone.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      idStr.toLowerCase().includes(searchTerm.toLowerCase());
+      normalizedSearch === "" ||
+      applicantName.toLowerCase().includes(normalizedSearch) ||
+      phone.toLowerCase().includes(normalizedSearch) ||
+      normalizeSearch(idStr).includes(normalizedSearch);
 
     return matchesStatus && matchesSearch;
   });
@@ -395,7 +402,7 @@ export default function Applications() {
         className={`border-b border-gray-100 hover:bg-gray-50 transition-colors ${idx === applications.length - 1 ? "border-none" : ""}`}
       >
         <td className="px-6 py-4 font-bold text-gray-700 whitespace-nowrap">
-          {app._id?.slice(-8).toUpperCase()}
+          {`#${app._id?.slice(-8).toUpperCase()}`}
         </td>
         <td className="px-6 py-4 font-bold flex items-center space-x-3 whitespace-nowrap">
           {app?.userId?.profileImage ?
@@ -479,31 +486,39 @@ export default function Applications() {
       app.formData?.applicantName ||
       app.formData?.headOfFamily ||
       app.formData?.fullName ||
+      app.formData?.name ||
+      app.formData?.fullname ||
+      app.userId?.name ||
       "Unknown";
 
-    const phone = app.formData?.mobileNumber || app.formData?.phone || "N/A";
+    const phone =
+      app.formData?.mobileNumber ||
+      app.formData?.phone ||
+      app.formData?.mobile ||
+      app.userId?.mobileNumber ||
+      "N/A";
 
     return (
       <div
         key={app._id || idx}
         className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 flex flex-col space-y-4"
       >
-        <div className="flex justify-between items-start">
-          <div className="flex items-center space-x-3">
+        <div className="flex justify-between items-start gap-3">
+          <div className="flex items-center space-x-3 min-w-0 flex-1">
             <div className="w-10 h-10 bg-[#041A40] rounded-full flex items-center justify-center text-white font-bold text-sm shrink-0">
               {applicantName.slice(0, 2).toUpperCase()}
             </div>
-            <div>
-              <div className="text-gray-900 font-bold text-base leading-tight">
+            <div className="min-w-0">
+              <div className="text-gray-900 font-bold text-base leading-tight break-words">
                 {applicantName}
               </div>
-              <div className="text-gray-400 text-xs font-normal mt-0.5">
+              <div className="text-gray-400 text-xs font-normal mt-0.5 break-words">
                 {phone}
               </div>
             </div>
           </div>
           <div className="text-xs font-bold text-gray-500">
-            {app._id?.slice(-8).toUpperCase()}
+            {`#${app._id?.slice(-8).toUpperCase() || "N/A"}`}
           </div>
         </div>
 
@@ -708,7 +723,7 @@ export default function Applications() {
             </select>
 
             <SearchInput
-              placeholder="Search user"
+              placeholder="Search Application"
               showFilter={false}
               className="w-full sm:w-auto"
               value={searchTerm}
