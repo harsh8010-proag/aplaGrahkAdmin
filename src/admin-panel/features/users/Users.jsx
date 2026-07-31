@@ -215,6 +215,37 @@ export default function Users() {
     setCurrentPage(page);
   };
 
+  const getPageNumbers = () => {
+    const delta = 1; // how many pages to show around current page
+    const range = [];
+    const rangeWithDots = [];
+    let lastPage;
+
+    for (let i = 1; i <= totalPages; i++) {
+      if (
+        i === 1 ||
+        i === totalPages ||
+        (i >= currentPage - delta && i <= currentPage + delta)
+      ) {
+        range.push(i);
+      }
+    }
+
+    range.forEach((page) => {
+      if (lastPage) {
+        if (page - lastPage === 2) {
+          rangeWithDots.push(lastPage + 1);
+        } else if (page - lastPage > 2) {
+          rangeWithDots.push("...");
+        }
+      }
+      rangeWithDots.push(page);
+      lastPage = page;
+    });
+
+    return rangeWithDots;
+  };
+
   const renderRow = (user, idx) => {
     const id = user._id || user.id;
     const name = user.name || "Unnamed";
@@ -624,18 +655,27 @@ export default function Users() {
               Prev
             </button>
 
-            {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-              <button
-                key={page}
-                onClick={() => handlePageChange(page)}
-                className={`px-3 py-1.5 rounded-lg text-sm font-bold ${currentPage === page
-                  ? "bg-[#FF8303] text-white"
-                  : "border border-gray-200 text-[#041A40] hover:bg-gray-100"
-                  }`}
-              >
-                {page}
-              </button>
-            ))}
+            {getPageNumbers().map((page, idx) =>
+              page === "..." ? (
+                <span
+                  key={`dots-${idx}`}
+                  className="px-2 text-sm font-bold text-gray-400 select-none"
+                >
+                  ...
+                </span>
+              ) : (
+                <button
+                  key={page}
+                  onClick={() => handlePageChange(page)}
+                  className={`px-3 py-1.5 rounded-lg text-sm font-bold ${currentPage === page
+                    ? "bg-[#FF8303] text-white"
+                    : "border border-gray-200 text-[#041A40] hover:bg-gray-100"
+                    }`}
+                >
+                  {page}
+                </button>
+              )
+            )}
 
             <button
               onClick={() => handlePageChange(currentPage + 1)}

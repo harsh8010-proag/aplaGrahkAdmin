@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import { Eye, Mail, MessageSquareText, Phone, RefreshCw, Ticket, User2, X } from "lucide-react";
 import { useGetAllContactsQuery, useUpdateContactStatusMutation } from "../../../redux/api/contactsApi";
 import Button from "../../../shared/components/Button";
@@ -23,12 +23,10 @@ export default function Support() {
   const [search, setSearch] = useState("");
   const [updatingId, setUpdatingId] = useState(null);
   const [selectedContact, setSelectedContact] = useState(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const ticketsPerPage = 5;
 
   const contacts = data?.contacts || [];
-
-  const getTicketId = (ticket) =>
-    `#${ticket?._id?.slice(-6).toUpperCase() || "TKT"}`;
-
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
     if (!q) return contacts;
@@ -45,6 +43,50 @@ export default function Support() {
       ].some((v) => String(v || "").toLowerCase().includes(q));
     });
   }, [contacts, search]);
+
+  const totalPages = Math.ceil(filtered.length / ticketsPerPage) || 1;
+  const indexOfLast = currentPage * ticketsPerPage;
+  const indexOfFirst = indexOfLast - ticketsPerPage;
+  const paginatedContacts = filtered.slice(indexOfFirst, indexOfLast);
+
+  const handlePageChange = (page) => {
+    if (page < 1 || page > totalPages) return;
+    setCurrentPage(page);
+  };
+
+
+  const getPageNumbers = () => {
+    const delta = 1;
+    const range = [];
+    const rangeWithDots = [];
+    let lastPage;
+
+    for (let i = 1; i <= totalPages; i++) {
+      if (i === 1 || i === totalPages || (i >= currentPage - delta && i <= currentPage + delta)) {
+        range.push(i);
+      }
+    }
+
+    range.forEach((page) => {
+      if (lastPage) {
+        if (page - lastPage === 2) rangeWithDots.push(lastPage + 1);
+        else if (page - lastPage > 2) rangeWithDots.push("...");
+      }
+      rangeWithDots.push(page);
+      lastPage = page;
+    });
+
+    return rangeWithDots;
+  };
+  useEffect(() => {
+    if (currentPage > totalPages) setCurrentPage(totalPages);
+  }, [totalPages, currentPage]);
+
+
+  const getTicketId = (ticket) =>
+    `#${ticket?._id?.slice(-6).toUpperCase() || "TKT"}`;
+
+
 
   const stats = [
     { title: "Total Tickets", value: contacts.length, icon: Ticket },
@@ -82,9 +124,9 @@ export default function Support() {
             </div>
           </div>
         </td>
-        <td className="px-6 py-4 font-semibold text-gray-700 whitespace-nowrap">{contact.subject || "-"}</td>
+        <td className="px-6 py-4 font-semibold text-gray-700 whitespace-nowrap">{contact.subject ? `${contact.subject.slice(0, 12)}....` : "-"}</td>
         <td className="px-6 py-4 text-gray-600 max-w-[280px]">
-          <div className="truncate" title={contact.message || "-"}>{contact.message || "-"}</div>
+          <div className="truncate" title={contact.message || "-"}> {contact.message ? `${contact.message.slice(0, 12)}....` : "-"}</div>
           {contact.email && (
             <div className="text-xs text-gray-400 flex items-center gap-1 mt-1"><Mail size={12} /> {contact.email}</div>
           )}
@@ -138,11 +180,11 @@ export default function Support() {
         </div>
         <div>
           <div className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">Subject</div>
-          <div className="font-semibold text-gray-800">{contact.subject || "-"}</div>
+          <div className="font-semibold text-gray-800">{contact.subject ? `${contact.subject.slice(0, 12)}....` : "-"}</div>
         </div>
         <div>
           <div className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">Message</div>
-          <div className="text-sm text-gray-600 leading-relaxed">{contact.message || "-"}</div>
+          <div className="text-sm text-gray-600 leading-relaxed">{contact.message ? `${contact.message.slice(0, 12)}....` : "-"}</div>
         </div>
         <div className="flex flex-wrap gap-2 items-center">
           <button onClick={() => handleStatus(contact._id, "Pending")} disabled={updatingId === contact._id} className="px-3 py-2 rounded-xl bg-[#FFEDD5] text-[#F97316] text-xs font-bold">
@@ -175,7 +217,10 @@ export default function Support() {
           <p className="text-gray-500 font-medium mt-1">Track user contact requests with ticket IDs in one responsive dashboard.</p>
         </div>
         <div className="flex items-center gap-3">
-          <SearchInput value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search tickets..." />
+          <SearchInput value={search} onChange={(e) => {
+            setSearch(e.target.value);
+            setCurrentPage(1);
+          }} placeholder="Search tickets..." />
           <Button onClick={refetch} icon={RefreshCw} className="px-4">Refresh</Button>
         </div>
       </div>
@@ -195,7 +240,7 @@ export default function Support() {
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 md:p-6">
         <Table
           columns={columns}
-          data={filtered}
+          data={paginatedContacts}
           renderRow={renderRow}
           renderMobileCard={renderMobileCard}
           isLoading={isLoading}
@@ -203,6 +248,50 @@ export default function Support() {
         />
       </div>
 
+      {!isLoading && filtered.length > 0 && (
+        <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
+          <p className="text-sm text-gray-500 font-bold">
+            Showing {indexOfFirst + 1}-{Math.min(indexOfLast, filtered.length)} of {filtered.length} tickets
+          </p>
+
+          <div className="flex items-center space-x-2">
+            <button
+              onClick={() => handlePageChange(currentPage - 1)}
+              disabled={currentPage === 1}
+              className="px-3 py-1.5 rounded-lg border border-gray-200 text-sm font-bold text-[#041A40] disabled:opacity-40 disabled:cursor-not-allowed hover:bg-gray-100"
+            >
+              Prev
+            </button>
+
+            {getPageNumbers().map((page, idx) =>
+              page === "..." ? (
+                <span key={`dots-${idx}`} className="px-2 text-sm font-bold text-gray-400 select-none">
+                  ...
+                </span>
+              ) : (
+                <button
+                  key={page}
+                  onClick={() => handlePageChange(page)}
+                  className={`px-3 py-1.5 rounded-lg text-sm font-bold ${currentPage === page
+                    ? "bg-[#F97316] text-white"
+                    : "border border-gray-200 text-[#041A40] hover:bg-gray-100"
+                    }`}
+                >
+                  {page}
+                </button>
+              )
+            )}
+
+            <button
+              onClick={() => handlePageChange(currentPage + 1)}
+              disabled={currentPage === totalPages}
+              className="px-3 py-1.5 rounded-lg border border-gray-200 text-sm font-bold text-[#041A40] disabled:opacity-40 disabled:cursor-not-allowed hover:bg-gray-100"
+            >
+              Next
+            </button>
+          </div>
+        </div>
+      )}
       {selectedContact && (
         <div className="fixed inset-0 z-[90] bg-black/50 flex items-center justify-center p-4">
           <div className="w-full max-w-2xl bg-white rounded-3xl shadow-2xl overflow-hidden">
