@@ -244,13 +244,13 @@ export default function Support() {
               </div>
 
               <div className="flex flex-wrap gap-2 pt-2">
-                <button onClick={() => handleStatus(selectedContact._id, "Pending")} disabled={updatingId === contact._id} className="px-4 py-2 rounded-xl bg-[#FFEDD5] text-[#F97316] text-sm font-bold">
+                <button onClick={() => handleStatus(selectedContact._id, "Pending")} className="px-4 py-2 rounded-xl bg-[#FFEDD5] text-[#F97316] text-sm font-bold">
                   Pending
                 </button>
-                <button onClick={() => handleStatus(selectedContact._id, "In Progress")} disabled={updatingId === contact._id} className="px-4 py-2 rounded-xl bg-[#DBEAFE] text-[#2563EB] text-sm font-bold">
+                <button onClick={() => handleStatus(selectedContact._id, "In Progress")} className="px-4 py-2 rounded-xl bg-[#DBEAFE] text-[#2563EB] text-sm font-bold">
                   In Progress
                 </button>
-                <button onClick={() => handleStatus(selectedContact._id, "Resolved")} disabled={updatingId === contact._id} className="px-4 py-2 rounded-xl bg-[#DCFCE7] text-[#16A34A] text-sm font-bold">
+                <button onClick={() => handleStatus(selectedContact._id, "Resolved")} className="px-4 py-2 rounded-xl bg-[#DCFCE7] text-[#16A34A] text-sm font-bold">
                   Resolved
                 </button>
               </div>
