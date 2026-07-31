@@ -57,7 +57,7 @@ export default function Support() {
     try {
       setUpdatingId(contactId);
       await updateContactStatus({ contactId, status }).unwrap();
-      refetch();
+
     } finally {
       setUpdatingId(null);
       setSelectedContact(null)
@@ -90,9 +90,16 @@ export default function Support() {
           )}
         </td>
         <td className="px-6 py-4 whitespace-nowrap">
-          <span className={`px-3 py-1 rounded-full text-xs font-bold ${badgeStyles[contact.status] || "bg-gray-100 text-gray-500"}`}>
-            {contact.status}
-          </span>
+          {updatingId === contact._id ? (
+            <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold bg-gray-100 text-gray-500">
+              <RefreshCw size={12} className="animate-spin" />
+              Updating...
+            </span>
+          ) : (
+            <span className={`px-3 py-1 rounded-full text-xs font-bold ${badgeStyles[contact.status] || "bg-gray-100 text-gray-500"}`}>
+              {contact.status}
+            </span>
+          )}
         </td>
         <td className="px-6 py-4 font-semibold text-gray-500 whitespace-nowrap">{formatDate(contact.createdAt)}</td>
         <td className="px-6 py-4 whitespace-nowrap">
@@ -119,9 +126,15 @@ export default function Support() {
             <div className="text-lg font-black text-[#041A40] mt-1">{contact.fullName}</div>
             <div className="text-sm text-gray-500 flex items-center gap-2 mt-1"><Phone size={14} /> {contact.mobileNumber}</div>
           </div>
-          <span className={`px-3 py-1 rounded-full text-xs font-bold ${badgeStyles[contact.status] || "bg-gray-100 text-gray-500"}`}>
-            {contact.status}
-          </span>
+          {updatingId === contact._id ? (
+            <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold bg-gray-100 text-gray-500">
+              <RefreshCw size={12} className="animate-spin" /> Updating
+            </span>
+          ) : (
+            <span className={`px-3 py-1 rounded-full text-xs font-bold ${badgeStyles[contact.status] || "bg-gray-100 text-gray-500"}`}>
+              {contact.status}
+            </span>
+          )}
         </div>
         <div>
           <div className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">Subject</div>
@@ -185,7 +198,7 @@ export default function Support() {
           data={filtered}
           renderRow={renderRow}
           renderMobileCard={renderMobileCard}
-          isLoading={isLoading || isFetching}
+          isLoading={isLoading}
           skeletonRows={5}
         />
       </div>
@@ -231,13 +244,13 @@ export default function Support() {
               </div>
 
               <div className="flex flex-wrap gap-2 pt-2">
-                <button onClick={() => handleStatus(selectedContact._id, "Pending")} className="px-4 py-2 rounded-xl bg-[#FFEDD5] text-[#F97316] text-sm font-bold">
+                <button onClick={() => handleStatus(selectedContact._id, "Pending")} disabled={updatingId === contact._id} className="px-4 py-2 rounded-xl bg-[#FFEDD5] text-[#F97316] text-sm font-bold">
                   Pending
                 </button>
-                <button onClick={() => handleStatus(selectedContact._id, "In Progress")} className="px-4 py-2 rounded-xl bg-[#DBEAFE] text-[#2563EB] text-sm font-bold">
+                <button onClick={() => handleStatus(selectedContact._id, "In Progress")} disabled={updatingId === contact._id} className="px-4 py-2 rounded-xl bg-[#DBEAFE] text-[#2563EB] text-sm font-bold">
                   In Progress
                 </button>
-                <button onClick={() => handleStatus(selectedContact._id, "Resolved")} className="px-4 py-2 rounded-xl bg-[#DCFCE7] text-[#16A34A] text-sm font-bold">
+                <button onClick={() => handleStatus(selectedContact._id, "Resolved")} disabled={updatingId === contact._id} className="px-4 py-2 rounded-xl bg-[#DCFCE7] text-[#16A34A] text-sm font-bold">
                   Resolved
                 </button>
               </div>

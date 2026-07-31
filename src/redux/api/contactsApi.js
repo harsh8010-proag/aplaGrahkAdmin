@@ -8,7 +8,10 @@ export const contactsApi = createApi({
   endpoints: (builder) => ({
     getAllContacts: builder.query({
       query: () => "/v1/admin/get-all-contact",
-      providesTags: ["Contacts"],
+      providesTags: (result) =>
+        result?.contacts
+          ? [...result.contacts.map((c) => ({ type: "Contact", id: c._id })), { type: "Contact", id: "LIST" }]
+          : [{ type: "Contact", id: "LIST" }],
     }),
     updateContactStatus: builder.mutation({
       query: ({ contactId, status }) => ({
@@ -16,7 +19,7 @@ export const contactsApi = createApi({
         method: "PATCH",
         body: { status },
       }),
-      invalidatesTags: ["Contacts"],
+      invalidatesTags: (result, error, { contactId }) => [{ type: "Contact", id: contactId }, { type: "Contact", id: "LIST" }],
     }),
   }),
 });

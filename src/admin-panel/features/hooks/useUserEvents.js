@@ -9,7 +9,7 @@ export const useUserEvents = () => {
 
     const connectWebSocket = useCallback(() => {
         // Use environment variable or fallback to localhost
-        const WS_URL = process.env.REACT_APP_ADMIN_WS_URL || `ws://localhost:5000/ws`;
+        const WS_URL = import.meta.env.REACT_APP_ADMIN_WS_URL || `ws://localhost:5000/ws`;
 
         console.log(`🔌 Connecting to WebSocket: ${WS_URL}`);
         const ws = new WebSocket(WS_URL);
