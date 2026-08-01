@@ -1,4 +1,30 @@
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
+import Skeleton from '../../../shared/components/Skeleton'
+
+export function ApplicationStatusChartSkeleton() {
+  return (
+    <div
+      className="rounded-3xl p-6 shadow-sm border border-slate-100 h-full flex flex-col"
+      style={{ backgroundColor: "#D9D9D938" }}
+    >
+      <div className="mb-2 space-y-2">
+        <Skeleton className="h-5 w-36" />
+        <Skeleton className="h-3 w-28" />
+      </div>
+      <div className="relative flex-1 flex items-center justify-center -mt-4" style={{ minHeight: 250 }}>
+        <Skeleton className="w-[200px] h-[200px] rounded-full" />
+      </div>
+      <div className="mt-4 space-y-3">
+        {[0, 1, 2].map((i) => (
+          <div key={i} className="flex items-center justify-between">
+            <Skeleton className="h-3 w-20" />
+            <Skeleton className="h-3 w-10" />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
 
 
 export default function ApplicationStatusChart({ data }) {
@@ -47,8 +73,8 @@ export default function ApplicationStatusChart({ data }) {
         {/* Center Text */}
         <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none mt-2">
           <div className="text-2xl font-bold text-gray-900">
-  {total}
-</div>
+            {total}
+          </div>
           <div className="text-xs text-gray-400 font-bold tracking-wider">
             TOTAL
           </div>
