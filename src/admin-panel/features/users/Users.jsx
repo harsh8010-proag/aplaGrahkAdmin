@@ -11,6 +11,7 @@ import {
   useUserDeleteMutation,
 } from "../../../redux/api/usersApi";
 import { useState, useEffect, useCallback } from "react";
+import { useAdminWebSocket } from "../hooks/useAdminWebSocket";
 import * as XLSX from "xlsx";
 import { toast } from "react-toastify"; // If you're using react-toastify
 
@@ -26,6 +27,12 @@ export default function Users() {
   const usersPerPage = 5;
   const users = data?.users || [];
 
+  const { isConnected } = useAdminWebSocket(() => {
+    // This callback runs when a user logs in
+    console.log('🔄 Refetching users due to new login...');
+    refetch();
+  });
+
   // ============ WEBSOCKET INTEGRATION ============
   const [wsConnected, setWsConnected] = useState(false);
   const [lastLoginEvent, setLastLoginEvent] = useState(null);
@@ -36,18 +43,20 @@ export default function Users() {
     const WS_URL = import.meta.env.REACT_APP_ADMIN_WS_URL || 'ws://localhost:5000/ws';
 
     console.log('🔌 Connecting to admin WebSocket...');
-    const ws = new WebSocket(WS_URL);
+    const ws = new WebSocket(`${WS_URL}?role=admin`);
+
+    console.log('🔌 Admin connecting to WebSocket:', `${WS_URL}?role=admin`);
 
     ws.onopen = () => {
       console.log('✅ Admin WebSocket connected');
       setWsConnected(true);
 
       // Optionally send authentication if needed
-      const token = localStorage.getItem('adminToken');
+      // const token = localStorage.getItem('adminToken');
       if (token) {
         ws.send(JSON.stringify({
           type: 'AUTH',
-          token: token
+          role: token
         }));
       }
     };
