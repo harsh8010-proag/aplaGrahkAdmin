@@ -1,4 +1,4 @@
-// src/pages/admin/Users.jsx or wherever your Users component is located
+// src/pages/admin/Users.jsx
 import { Users as UsersIcon, Ban, Download, Loader2, Delete, UserX } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import StatCard from "../../../shared/components/StatCard";
@@ -10,10 +10,10 @@ import {
   useUserBlockMutation,
   useUserDeleteMutation,
 } from "../../../redux/api/usersApi";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { useAdminWebSocket } from "../hooks/useAdminWebSocket";
 import * as XLSX from "xlsx";
-import { toast } from "react-toastify"; // If you're using react-toastify
+import { toast } from "react-toastify";
 
 export default function Users() {
   const navigate = useNavigate();
@@ -27,104 +27,42 @@ export default function Users() {
   const usersPerPage = 5;
   const users = data?.users || [];
 
-  const { isConnected } = useAdminWebSocket(() => {
+  // Track last login event for highlighting
+  const [lastLoginEvent, setLastLoginEvent] = useState(null);
+
+  // ============ WEBSOCKET INTEGRATION (Single connection) ============
+  const { isConnected } = useAdminWebSocket((userData) => {
     // This callback runs when a user logs in
-    console.log('🔄 Refetching users due to new login...');
+    console.log('🔄 New user login detected:', userData);
+    setLastLoginEvent(userData);
+
+    // Show notification
+    const userName = userData?.name || 'User';
+    toast.success(`🔔 ${userName} just logged in!`, {
+      position: 'top-right',
+      autoClose: 5000,
+      hideProgressBar: false,
+      closeOnClick: true,
+      pauseOnHover: true,
+      draggable: true,
+    });
+
+    // Refetch users list to show updated data
     refetch();
   });
 
-  // ============ WEBSOCKET INTEGRATION ============
-  const [wsConnected, setWsConnected] = useState(false);
-  const [lastLoginEvent, setLastLoginEvent] = useState(null);
-
-  // Connect to WebSocket
+  // Clear last login event after 10 seconds
   useEffect(() => {
-    // Use environment variable or fallback
-    const WS_URL = import.meta.env.REACT_APP_ADMIN_WS_URL || 'ws://localhost:5000/ws';
-
-    console.log('🔌 Connecting to admin WebSocket...');
-    const ws = new WebSocket(`${WS_URL}?role=admin`);
-
-    console.log('🔌 Admin connecting to WebSocket:', `${WS_URL}?role=admin`);
-
-    ws.onopen = () => {
-      console.log('✅ Admin WebSocket connected');
-      setWsConnected(true);
-
-      // Optionally send authentication if needed
-      // const token = localStorage.getItem('adminToken');
-      if (token) {
-        ws.send(JSON.stringify({
-          type: 'AUTH',
-          role: token
-        }));
-      }
-    };
-
-    ws.onmessage = (event) => {
-      try {
-        const message = JSON.parse(event.data);
-        console.log('📩 WebSocket message received:', message);
-
-        if (message.type === 'USER_LOGGED_IN') {
-          console.log('🔔 New user login detected!', message.data);
-          setLastLoginEvent(message.data);
-
-          // Show notification
-          const userName = message.data?.name || 'User';
-          toast.success(`🔔 ${userName} just logged in!`, {
-            position: 'top-right',
-            autoClose: 5000,
-            hideProgressBar: false,
-            closeOnClick: true,
-            pauseOnHover: true,
-            draggable: true,
-          });
-
-          // Refetch users list to show updated data
-          refetch();
-        }
-      } catch (error) {
-        console.error('❌ Error parsing WebSocket message:', error);
-      }
-    };
-
-    ws.onerror = (error) => {
-      console.error('❌ WebSocket error:', error);
-      setWsConnected(false);
-    };
-
-    ws.onclose = () => {
-      console.log('🔌 WebSocket disconnected');
-      setWsConnected(false);
-
-      // Auto-reconnect after 5 seconds
-      const reconnectTimer = setTimeout(() => {
-        console.log('🔄 Attempting to reconnect WebSocket...');
-      }, 5000);
-
-      return () => clearTimeout(reconnectTimer);
-    };
-
-    // Cleanup on component unmount
-    return () => {
-      if (ws.readyState === WebSocket.OPEN) {
-        ws.close(1000, 'Component unmounted');
-      }
-    };
-  }, [refetch]); // Reconnect if refetch function changes
-
-  // Optional: Show connection status toast
-  useEffect(() => {
-    if (wsConnected) {
-      console.log('✅ Real-time updates active');
-    } else {
-      console.log('⚠️ Real-time updates disabled - refresh manually');
+    if (lastLoginEvent) {
+      const timer = setTimeout(() => {
+        setLastLoginEvent(null);
+      }, 10000);
+      return () => clearTimeout(timer);
     }
-  }, [wsConnected]);
+  }, [lastLoginEvent]);
   // ============ END WEBSOCKET INTEGRATION ============
 
-  // Newest user pehle dikhane ke liye
+  // Newest user first
   const sortedUsers = [...users].sort(
     (a, b) => new Date(b.createdAt) - new Date(a.createdAt),
   );
@@ -139,10 +77,9 @@ export default function Users() {
     try {
       setDeletingId(id);
       const res = await userDelete(id).unwrap();
-
       console.log(res);
       toast.success(res.message || "User deleted successfully");
-      refetch(); // Refetch after deletion
+      refetch();
     } catch (err) {
       console.error(err);
       toast.error(err?.data?.message || "Failed to delete user");
@@ -156,7 +93,7 @@ export default function Users() {
       setBlockingId(id);
       await userBlock(id).unwrap();
       toast.success("User status updated successfully");
-      refetch(); // Refetch after block/unblock
+      refetch();
     } catch (error) {
       console.log(error);
       toast.error(error?.data?.message || "Failed to update user status");
@@ -197,10 +134,8 @@ export default function Users() {
     }));
 
     const worksheet = XLSX.utils.json_to_sheet(exportData);
-
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, "Users");
-
     XLSX.writeFile(workbook, "Users.xlsx");
     toast.success("Users exported successfully!");
   };
@@ -209,9 +144,17 @@ export default function Users() {
     .filter((user) => !user.isDeleted)
     .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
+  // ============ FIXED SEARCH LOGIC - Search by Name OR Mobile ============
   const filterUser = activeSortedUsers.filter((user) => {
-    return (user.name || "").toLowerCase().includes(search.toLowerCase());
+    const searchTerm = search.toLowerCase().trim();
+    if (!searchTerm) return true;
+
+    const name = (user.name || "").toLowerCase();
+    const mobile = (user.mobileNumber || user.phone || "").toString().toLowerCase();
+
+    return name.includes(searchTerm) || mobile.includes(searchTerm);
   });
+  // ============ END FIXED SEARCH ============
 
   // Pagination calculations
   const totalPages = Math.ceil(filterUser.length / usersPerPage);
@@ -225,7 +168,7 @@ export default function Users() {
   };
 
   const getPageNumbers = () => {
-    const delta = 1; // how many pages to show around current page
+    const delta = 1;
     const range = [];
     const rangeWithDots = [];
     let lastPage;
@@ -275,7 +218,7 @@ export default function Users() {
     const isRowBlocking = blockingId === id;
     const isRowDeleting = deletingId === id;
 
-    // Check if this user just logged in (for highlighting)
+    // Check if this user just logged in
     const isJustLoggedIn = lastLoginEvent && lastLoginEvent.userId === id;
 
     if (isDeleted) return null;
@@ -284,9 +227,8 @@ export default function Users() {
       <tr
         key={id}
         className={`border-b border-gray-100 hover:bg-gray-50 transition-colors ${idx === users.length - 1 ? "border-none" : ""
-          } ${isJustLoggedIn ? "bg-green-50 animate-pulse" : ""}`}
+          } ${isJustLoggedIn ? "bg-green-50" : ""}`}
       >
-        {/* User Info */}
         <td className="px-6 py-4 font-bold flex items-center space-x-3 whitespace-nowrap">
           <div className="w-10 h-10 bg-[#041A40] rounded-full flex items-center justify-center text-white font-bold text-sm shrink-0">
             {initials}
@@ -295,7 +237,7 @@ export default function Users() {
             <div className="text-gray-900">
               {name}
               {isJustLoggedIn && (
-                <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 animate-pulse">
                   Just Logged In 🟢
                 </span>
               )}
@@ -304,7 +246,6 @@ export default function Users() {
           </div>
         </td>
 
-        {/* Address */}
         <td className="px-6 py-4">
           <div className="text-gray-700 font-bold whitespace-nowrap">
             {address1}
@@ -314,19 +255,16 @@ export default function Users() {
           </div>
         </td>
 
-        {/* Joined On */}
         <td className="px-6 py-4 font-bold text-gray-700 whitespace-nowrap">
           {joinedOn}
         </td>
 
-        {/* Applications */}
         <td className="px-6 py-4">
           <span className="px-3.5 py-1 bg-[#FF8303] rounded-full inline-flex items-center justify-center text-white font-bold text-xs">
             {applications}
           </span>
         </td>
 
-        {/* Status Toggle */}
         <td className="px-6 py-4">
           <button
             onClick={() => handleUserBlock(id)}
@@ -349,7 +287,6 @@ export default function Users() {
           </button>
         </td>
 
-        {/* Actions */}
         <td className="px-6 py-4">
           <div className="flex items-center space-x-4">
             <button
@@ -407,7 +344,6 @@ export default function Users() {
     const isRowBlocking = blockingId === id;
     const isRowDeleting = deletingId === id;
 
-    // Check if this user just logged in
     const isJustLoggedIn = lastLoginEvent && lastLoginEvent.userId === id;
 
     return (
@@ -416,7 +352,6 @@ export default function Users() {
         className={`bg-white p-5 rounded-2xl shadow-sm border border-gray-100 flex flex-col space-y-4 ${isJustLoggedIn ? "border-green-500 border-2 bg-green-50" : ""
           }`}
       >
-        {/* Header: User Info & Status */}
         <div className="flex justify-between items-start">
           <div className="flex items-center space-x-3">
             <div className="w-10 h-10 bg-[#041A40] rounded-full flex items-center justify-center text-white font-bold text-sm shrink-0">
@@ -426,7 +361,7 @@ export default function Users() {
               <div className="text-gray-900 font-bold text-base leading-tight">
                 {name}
                 {isJustLoggedIn && (
-                  <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                  <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 animate-pulse">
                     🟢 Just In
                   </span>
                 )}
@@ -457,7 +392,6 @@ export default function Users() {
           </button>
         </div>
 
-        {/* Details: Address */}
         <div>
           <p className="text-[10px] uppercase tracking-wider text-gray-400 font-bold mb-1">
             Address
@@ -466,7 +400,6 @@ export default function Users() {
           <div className="text-gray-700 text-sm font-bold">{address2}</div>
         </div>
 
-        {/* Details: Joined On & Applications */}
         <div className="flex justify-between items-center bg-gray-50 p-3 rounded-xl border border-gray-100">
           <div>
             <p className="text-[10px] uppercase tracking-wider text-gray-400 font-bold mb-1">
@@ -549,11 +482,11 @@ export default function Users() {
           {/* WebSocket Status Indicator */}
           <div className="flex items-center space-x-2 bg-gray-100 px-3 py-2 rounded-full">
             <span
-              className={`inline-block w-2 h-2 rounded-full ${wsConnected ? "bg-green-500 animate-pulse" : "bg-red-500"
+              className={`inline-block w-2 h-2 rounded-full ${isConnected ? "bg-green-500 animate-pulse" : "bg-red-500"
                 }`}
             />
             <span className="text-xs font-bold text-gray-700">
-              {wsConnected ? "Live Updates" : "Offline"}
+              {isConnected ? "Live Updates" : "Offline"}
             </span>
           </div>
         </div>
@@ -610,13 +543,13 @@ export default function Users() {
           <div className="flex items-center space-x-4">
             <h2 className="text-xl font-bold text-[#041A40]">All Users</h2>
             {lastLoginEvent && (
-              <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full">
-                New login: {lastLoginEvent.name}
+              <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full animate-pulse">
+                🟢 New login: {lastLoginEvent.name}
               </span>
             )}
           </div>
           <SearchInput
-            placeholder="Search user"
+            placeholder="Search by name or mobile number..."
             showFilter={false}
             onChange={(e) => {
               setSearch(e.target.value);
@@ -636,6 +569,10 @@ export default function Users() {
         ) : users.length === 0 ? (
           <div className="text-center text-gray-500 py-10 font-bold">
             No users found.
+          </div>
+        ) : filterUser.length === 0 ? (
+          <div className="text-center text-gray-500 py-10 font-bold">
+            No users found matching "{search}"
           </div>
         ) : (
           <Table
