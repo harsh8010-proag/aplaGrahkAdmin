@@ -94,92 +94,94 @@ const DynamicInputModal = ({ isOpen, onClose, initialData }) => {
 
   return (
     <div
-      className="fixed inset-0 bg-[#222222]/80 flex items-center justify-center z-50 p-4"
+      className="fixed inset-0 bg-[#222222]/80 flex items-center justify-center z-50 p-4 "
       onClick={onClose}
     >
       <div
-        className="bg-white w-full max-w-[500px] rounded-[32px] p-8 md:p-10 shadow-2xl relative"
+        className="bg-white w-full max-w-[500px] rounded-[32px] p-8 md:p-10 shadow-2xl relative max-h-[90vh] overflow-hidden flex flex-col"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Title */}
         <h2 className="text-[22px] font-semibold text-[#0B2149] mb-6">
           {initialData ? 'Update Service' : 'Create New Service'}
         </h2>
-
-        {/* Service Name */}
-        <div className="mb-5">
-          <label className="block text-[15px] font-medium text-gray-800 mb-2">
-            Service Name
-          </label>
-          <input
-            type="text"
-            value={serviceName}
-            onChange={(e) => setServiceName(e.target.value)}
-            placeholder="e.g Aadhaar Card"
-            className="w-full border border-gray-200 rounded-xl px-4 py-3.5 text-sm bg-white outline-none focus:ring-2 focus:ring-orange-400 placeholder:text-gray-400"
-          />
-        </div>
-
-        {/* Service Type */}
-        <div className="mb-5">
-          <label className="block text-[15px] font-medium text-gray-800 mb-2">
-            Service type
-          </label>
-          <select
-            className="w-full border border-gray-200 rounded-xl px-4 py-3.5 text-sm bg-white outline-none focus:ring-2 focus:ring-orange-400 appearance-none bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20width%3D%2212%22%20height%3D%228%22%20viewBox%3D%220%200%2012%208%20%22%20fill%3D%22none%22%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%3E%3Cpath%20d%3D%22M1%201.5L6%206.5L11%201.5%22%20stroke%3D%22%23666666%22%20stroke-width%3D%221.5%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22/%3E%3C/svg%3E')] bg-[length:12px_8px] bg-no-repeat bg-[position:calc(100%-1rem)_center] text-gray-600"
-          >
-            <option>New</option>
-            <option>Update</option>
-            <option>Correction</option>
-          </select>
-        </div>
-
-        {/* Fees */}
-        <div className="mb-5">
-          <label className="block text-[15px] font-medium text-gray-800 mb-2">
-            Fees
-          </label>
-          <input
-            type="number"
-            value={fees}
-            onChange={(e) => setFees(e.target.value)}
-            placeholder="E.g 100"
-            className="w-full border border-gray-200 rounded-xl px-4 py-3.5 text-sm bg-white outline-none focus:ring-2 focus:ring-orange-400 placeholder:text-gray-400"
-          />
-        </div>
-
-        {/* Required Documents */}
-        <div className="mb-8">
-          <label className="block text-[15px] font-medium text-gray-800 mb-2">
-            Required Documents
-          </label>
-          <div className="space-y-3">
-            {fields.map((field, index) => (
-              <div key={index} className="flex gap-3">
-                <select
-                  value={field}
-                  onChange={(e) => handleChange(index, e.target.value)}
-                  className="flex-1 border border-gray-200 rounded-xl px-4 py-3.5 text-sm bg-white outline-none focus:ring-2 focus:ring-orange-400 text-gray-800 appearance-none bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20width%3D%2212%22%20height%3D%228%22%20viewBox%3D%220%200%2012%208%20%22%20fill%3D%22none%22%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%3E%3Cpath%20d%3D%22M1%201.5L6%206.5L11%201.5%22%20stroke%3D%22%23666666%22%20stroke-width%3D%221.5%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22/%3E%3C/svg%3E')] bg-[length:12px_8px] bg-no-repeat bg-[position:calc(100%-1rem)_center]"
-                >
-                  <option value="" disabled>Select a Document</option>
-                  {docTypes.map(doc => (
-                    <option key={doc._id} value={doc._id}>
-                      {doc.name?.en || doc.internalKey}
-                    </option>
-                  ))}
-                </select>
-                {index === fields.length - 1 && (
-                  <button
-                    type="button"
-                    onClick={addField}
-                    className="w-[52px] h-[52px] shrink-0 bg-[#38B000] hover:bg-[#2d9200] text-white text-2xl font-light rounded-xl flex items-center justify-center transition"
-                  >
-                    +
-                  </button>
-                )}
-              </div>
-            ))}
+        <div className="overflow-y-auto pr-1 flex-1 min-h-0 bg-white">
+          {/* Service Name */}
+          <div className="mb-5">
+            <label className="block text-[15px] font-medium text-gray-800 mb-2">
+              Service Name
+            </label>
+            <input
+              type="text"
+              value={serviceName}
+              onChange={(e) => setServiceName(e.target.value)}
+              placeholder="e.g Aadhaar Card"
+              className="w-full border border-gray-200 rounded-xl px-4 py-3.5 text-sm bg-white outline-none focus:ring-2 focus:ring-orange-400 placeholder:text-gray-400"
+            />
           </div>
+
+          {/* Service Type */}
+          <div className="mb-5">
+            <label className="block text-[15px] font-medium text-gray-800 mb-2">
+              Service type
+            </label>
+            <select
+              className="w-full border border-gray-200 rounded-xl px-4 py-3.5 text-sm bg-white outline-none focus:ring-2 focus:ring-orange-400 appearance-none bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20width%3D%2212%22%20height%3D%228%22%20viewBox%3D%220%200%2012%208%20%22%20fill%3D%22none%22%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%3E%3Cpath%20d%3D%22M1%201.5L6%206.5L11%201.5%22%20stroke%3D%22%23666666%22%20stroke-width%3D%221.5%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22/%3E%3C/svg%3E')] bg-[length:12px_8px] bg-no-repeat bg-[position:calc(100%-1rem)_center] text-gray-600"
+            >
+              <option>New</option>
+              <option>Update</option>
+              <option>Correction</option>
+            </select>
+          </div>
+
+          {/* Fees */}
+          <div className="mb-5">
+            <label className="block text-[15px] font-medium text-gray-800 mb-2">
+              Fees
+            </label>
+            <input
+              type="number"
+              value={fees}
+              onChange={(e) => setFees(e.target.value)}
+              placeholder="E.g 100"
+              className="w-full border border-gray-200 rounded-xl px-4 py-3.5 text-sm bg-white outline-none focus:ring-2 focus:ring-orange-400 placeholder:text-gray-400"
+            />
+          </div>
+
+          {/* Required Documents */}
+          <div className="mb-8">
+            <label className="block text-[15px] font-medium text-gray-800 mb-2">
+              Required Documents
+            </label>
+            <div className="space-y-3 max-h-[40vh] overflow-y-auto pr-1">
+              {fields.map((field, index) => (
+                <div key={index} className="flex gap-3">
+                  <select
+                    value={field}
+                    onChange={(e) => handleChange(index, e.target.value)}
+                    className="flex-1 border border-gray-200 rounded-xl px-4 py-3.5 text-sm bg-white outline-none focus:ring-2 focus:ring-orange-400 text-gray-800 appearance-none bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20width%3D%2212%22%20height%3D%228%22%20viewBox%3D%220%200%2012%208%20%22%20fill%3D%22none%22%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%3E%3Cpath%20d%3D%22M1%201.5L6%206.5L11%201.5%22%20stroke%3D%22%23666666%22%20stroke-width%3D%221.5%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22/%3E%3C/svg%3E')] bg-[length:12px_8px] bg-no-repeat bg-[position:calc(100%-1rem)_center]"
+                  >
+                    <option value="" disabled>Select a Document</option>
+                    {docTypes.map(doc => (
+                      <option key={doc._id} value={doc._id}>
+                        {doc.name?.en || doc.internalKey}
+                      </option>
+                    ))}
+                  </select>
+                  {index === fields.length - 1 && (
+                    <button
+                      type="button"
+                      onClick={addField}
+                      className="w-[52px] h-[52px] shrink-0 bg-[#38B000] hover:bg-[#2d9200] text-white text-2xl font-light rounded-xl flex items-center justify-center transition"
+                    >
+                      +
+                    </button>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+
         </div>
 
         {/* Add Service Button */}

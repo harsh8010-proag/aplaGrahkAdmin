@@ -17,13 +17,10 @@ export const store = configureStore({
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware().concat(
-        authApi.middleware, 
-        servicesApi.middleware,
-        documentApi.middleware,
+      authApi.middleware,
+      servicesApi.middleware,
+      documentApi.middleware,
       applicationsApi.middleware,
-    usersApi.middleware,
-    contactsApi.middleware),
-
-        
-        
+      usersApi.middleware,
+      contactsApi.middleware),
 });

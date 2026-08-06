@@ -6,12 +6,12 @@ import {
   CheckCircle2,
   XCircle,
   Download,
+  RefreshCw,
   Check,
   X,
   User,
 } from "lucide-react";
 import { FaFileCircleCheck } from "react-icons/fa6";
-import wsService from "../../../utils/websocketService";
 import StatCard from "../../../shared/components/StatCard";
 import Button from "../../../shared/components/Button";
 import SearchInput from "../../../shared/components/SearchInput";
@@ -102,22 +102,6 @@ const SkeletonStatCard = () => (
 
 export default function Applications() {
   const navigate = useNavigate();
-  const [newAppNotification, setNewAppNotification] = useState(false);
-  const [newAppCount, setNewAppCount] = useState(0);
-
-  // ── Real-time WebSocket listener for new application notifications ──
-  useEffect(() => {
-    wsService.connect();
-
-    const unsubscribe = wsService.addListener("NEW_APPLICATION", (data) => {
-      setNewAppNotification(true);
-      setNewAppCount((prev) => prev + 1);
-      // Auto-hide the banner after 8 seconds
-      setTimeout(() => setNewAppNotification(false), 8000);
-    });
-
-    return () => unsubscribe();
-  }, []);
 
   const columns = [
     "Application ID",
@@ -128,13 +112,17 @@ export default function Applications() {
     "Status",
     "Actions",
   ];
-  const { data: allApplications, isLoading } = useGetAplicationsQuery();
+  const { data: allApplications, isLoading, refetch } = useGetAplicationsQuery();
   const [updateApplicationStatus] = useUpdateApplicationStatusMutation();
   const [updatingId, setUpdatingId] = useState(null);
   // const [statusFilter, setStatusFilter] = useState("All Status");
   // const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const applicationsPerPage = 6;
+
+  useEffect(() => {
+    refetch();
+  }, [refetch]);
 
   const handleStatusFilterChange = (value) => {
     setStatusFilter(value);
@@ -172,7 +160,7 @@ export default function Applications() {
   ).length;
 
   const approvedCount = applications.filter(
-    (app) => app.status === "Approved",
+    (app) => app.status === "Completed",
   ).length;
   const rejectedCount = applications.filter(
     (app) => app.status === "Rejected",
@@ -191,6 +179,13 @@ export default function Applications() {
   ).length;
 
   const statusTabs = [
+    {
+      label: "All",
+      value: "All Status",
+      count: applications.length,
+      color: "#041A40",
+      bg: "#E1F5FE",
+    },
     {
       label: "Pending",
       value: "Pending",
@@ -236,6 +231,8 @@ export default function Applications() {
       app.formData?.fullname ||
       app.userId?.name ||
       "";
+    const service = app.serviceId?.name?.en || ""
+    console.log('---------------------', service)
     const phone = app.formData?.mobileNumber || app.formData?.phone || "";
     const idStr = `#${app._id?.slice(-8).toUpperCase() || ""}`;
     const normalizedSearch = normalizeSearch(searchTerm);
@@ -247,6 +244,7 @@ export default function Applications() {
       normalizedSearch === "" ||
       applicantName.toLowerCase().includes(normalizedSearch) ||
       phone.toLowerCase().includes(normalizedSearch) ||
+      service.toLowerCase().includes(normalizedSearch) ||
       normalizeSearch(idStr).includes(normalizedSearch);
 
     return matchesStatus && matchesSearch;
@@ -324,7 +322,7 @@ export default function Applications() {
   };
 
   const getPaymentBadge = (payment) => {
-    console.log(payment)
+
     switch (payment) {
       case "pending":
         return (
@@ -603,39 +601,12 @@ export default function Applications() {
         <div>
           <div className="flex items-center gap-3">
             <h1 className="text-3xl font-bold text-[#041A40]">Applications</h1>
-            {/* Live badge — always visible while WS is expected to be active */}
-            <span className="flex items-center gap-1.5 bg-green-50 border border-green-200 text-green-700 text-[11px] font-bold px-2.5 py-1 rounded-full">
-              <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse inline-block" />
-              LIVE
-            </span>
-            {newAppCount > 0 && (
-              <span className="flex items-center justify-center bg-red-500 text-white text-[10px] font-black w-5 h-5 rounded-full">
-                {newAppCount > 9 ? "9+" : newAppCount}
-              </span>
-            )}
           </div>
           <p className="text-gray-600 font-bold text-sm mt-1">
             Review, verify and process citizen service applications.
           </p>
         </div>
       </div>
-
-      {/* Real-time new application toast banner */}
-      {newAppNotification && (
-        <div className="flex items-center justify-between bg-blue-50 border border-blue-200 text-blue-800 px-4 py-3 rounded-xl text-sm font-semibold shadow-sm animate-pulse">
-          <div className="flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-blue-500 inline-block" />
-            🔔 A new application has been submitted! The list has been updated automatically.
-          </div>
-          <button
-            onClick={() => setNewAppNotification(false)}
-            className="text-blue-500 hover:text-blue-800 font-bold text-base leading-none ml-4"
-            aria-label="Dismiss"
-          >
-            ✕
-          </button>
-        </div>
-      )}
 
       {/* Stat Cards & Actions */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5  gap-2">
@@ -708,16 +679,15 @@ export default function Applications() {
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 space-y-4 md:space-y-0">
           <h2 className="text-xl font-bold text-[#041A40]">All Applications</h2>
 
-          <div className="flex flex-col sm:flex-row items-center space-y-3 sm:space-y-0 sm:space-x-4 w-full md:w-auto">
+          <div className="flex flex-col sm:flex-row items-center space-y-3 sm:space-y-0 sm:space-x-2 w-full md:w-auto">
             <select
               value={statusFilter}
-              onChange={(e) => handleStatusFilterChange(e.target.value)}
               onChange={(e) => setStatusFilter(e.target.value)}
               className="w-full sm:w-auto px-4 py-2 text-sm font-bold text-gray-700 bg-white border border-gray-200 rounded-full focus:outline-none focus:ring-2 focus:ring-[#FF8303]/20 appearance-none pr-8 bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20width%3D%2212%22%20height%3D%228%22%20viewBox%3D%220%200%2012%208%20%22%20fill%3D%22none%22%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%3E%3Cpath%20d%3D%22M1%201.5L6%206.5L11%201.5%22%20stroke%3D%22%23666666%22%20stroke-width%3D%221.5%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22/%3E%3C/svg%3E')] bg-[length:12px_8px] bg-no-repeat bg-[position:calc(100%-1rem)_center]"
             >
               <option>All Status</option>
               <option>Pending</option>
-              <option>Approved</option>
+              <option>Completed</option>
               <option>Rejected</option>
               <option>In Progress</option>
             </select>
@@ -729,6 +699,14 @@ export default function Applications() {
               value={searchTerm}
               onChange={handleSearchChange}
             />
+            <button
+              onClick={refetch}
+              disabled={isLoading}
+              title="Refresh"
+              className="p-2.5 bg-gray-50 border border-gray-200 rounded-full text-gray-600 hover:bg-gray-100 hover:border-[#FF8303] hover:text-[#FF8303] transition-colors focus:outline-none focus:ring-2 focus:ring-[#FF8303]/20 shrink-0 disabled:opacity-60 disabled:cursor-not-allowed"
+            >
+              <RefreshCw className={`w-4 h-4 ${isLoading ? "animate-spin" : ""}`} />
+            </button>
           </div>
         </div>
 
@@ -739,7 +717,7 @@ export default function Applications() {
               <button
                 key={tab.value}
                 onClick={() => {
-                  setStatusFilter(isActive ? "All Status" : tab.value);
+                  setStatusFilter(isActive && tab.value !== "All Status" ? "All Status" : tab.value);
                   setCurrentPage(1);
                 }}
                 className="px-4 py-2 rounded-full text-sm font-bold transition-all border"

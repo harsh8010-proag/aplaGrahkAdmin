@@ -383,7 +383,7 @@ export default function ApplicationDetails() {
           {app.status === "Pending" && (
             <>
               <button
-                onClick={() => handleStatusUpdate(app._id, "Approved")}
+                onClick={() => handleStatusUpdate(app._id, "Completed")}
                 className="w-8 h-8 rounded-full bg-[#22C55E] text-white flex items-center justify-center"
               >
                 <Check className="w-5 h-5" strokeWidth={3} />

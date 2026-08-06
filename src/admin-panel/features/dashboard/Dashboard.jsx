@@ -1,11 +1,16 @@
-import { FileText, Clock, CheckCircle, XCircle, Lock } from "lucide-react";
+import { FileText, Clock, CheckCircle, XCircle, Lock, RefreshCw } from "lucide-react";
+import { useEffect } from "react";
 import StatCard, { StatCardSkeleton } from "../../../shared/components/StatCard";
 import DailyApplicationsChart, { DailyApplicationsChartSkeleton } from "./DailyApplicationsChart";
 import ApplicationStatusChart, { ApplicationStatusChartSkeleton } from "./ApplicationStatusChart";
 import { useGetDashbaordQuery } from "../../../redux/api/authApi";
 
 export default function Dashboard() {
-  const { data: dashboardData, isLoading } = useGetDashbaordQuery();
+  const { data: dashboardData, isLoading, isFetching, refetch } = useGetDashbaordQuery();
+
+  useEffect(() => {
+    refetch();
+  }, [refetch]);
 
   const dashData = dashboardData?.data || {};
   const cards = dashData.cards || {};
@@ -39,13 +44,23 @@ export default function Dashboard() {
   return (
     <div className="w-auto lg:-mx-4 xl:-mx-8 space-y-6">
       {/* Header — always static, never skeleton */}
-      <div>
-        <h1 className="text-3xl font-bold text-[#1E293B] mb-2 flex items-center">
-          Welcome back, Rohan <span className="ml-2">👋</span>
-        </h1>
-        <p className="text-gray-600 font-bold">
-          Here's what's happening across AAPL GRAHAK today.
-        </p>
+      <div className="flex justify-between items-start gap-3">
+        <div>
+          <h1 className="text-3xl font-bold text-[#1E293B] mb-2 flex items-center">
+            Welcome back, Rohan <span className="ml-2">👋</span>
+          </h1>
+          <p className="text-gray-600 font-bold">
+            Here's what's happening across AAPL GRAHAK today.
+          </p>
+        </div>
+        <button
+          onClick={refetch}
+          disabled={isLoading || isFetching}
+          title="Refresh Dashboard"
+          className="p-2.5 bg-gray-50 border border-gray-200 rounded-full text-gray-600 hover:bg-gray-100 hover:border-[#FF8303] hover:text-[#FF8303] transition-colors focus:outline-none focus:ring-2 focus:ring-[#FF8303]/20 shrink-0 disabled:opacity-60 disabled:cursor-not-allowed"
+        >
+          <RefreshCw className={`w-4 h-4 ${isLoading || isFetching ? "animate-spin" : ""}`} />
+        </button>
       </div>
 
       {/* Stat Cards */}

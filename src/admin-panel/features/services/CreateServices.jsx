@@ -1,4 +1,5 @@
-import { useState, useEffect, useMemo } from "react";
+// src/pages/admin/CreateServices.jsx
+import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import {
   Plus,
   Trash2,
@@ -13,6 +14,7 @@ import {
   HelpCircle,
   ImageIcon,
   X,
+  AlertCircle,
 } from "lucide-react";
 import {
   useCreateServiceMutation,
@@ -25,11 +27,9 @@ import { useNavigate, useLocation } from "react-router-dom";
 
 const LANGS = [
   { key: "en", label: "English" },
-  { key: "hi", label: "हिंदी" },
-  { key: "mr", label: "मराठी" },
+  { key: "mr", label: "Marathi" },
 ];
-
-const emptyTri = { en: "", hi: "", mr: "" };
+const emptyTri = { en: "", mr: "" };
 
 const INPUT_TYPES = [
   { value: "text", label: "Text" },
@@ -41,28 +41,21 @@ const INPUT_TYPES = [
   { value: "checkbox", label: "Checkbox" },
 ];
 
-// inputType values that need an "options" list configured by the admin
 const OPTION_BASED_TYPES = ["select", "radio"];
 
 const emptyOption = () => ({ value: "", label: { ...emptyTri } });
 
-// Normalizes an option coming from an existing service (old data may have
-// saved options as plain strings, e.g. "Single") into the {value, label}
-// shape this form (and the DynamicField consumer) works with.
 const normalizeOptionForEdit = (opt) => {
   if (typeof opt === "string") {
-    return { value: opt, label: { en: opt, hi: "", mr: "" } };
+    return { value: opt, label: { en: opt, mr: "" } };
   }
   return {
     value: opt.value ?? "",
-    label: { en: "", hi: "", mr: "", ...(opt.label || {}) },
+    label: { en: "", mr: "", ...(opt.label || {}) },
   };
 };
 
-/* ---------------------------------------------------------------- */
-/* Small building blocks                                            */
-/* ---------------------------------------------------------------- */
-
+// ============ COMPONENTS ============
 function SectionCard({ icon: Icon, title, description, action, children }) {
   return (
     <section className="rounded-xl border border-slate-200 bg-white">
@@ -113,7 +106,7 @@ function TriLangInput({ label, value, onChange, textarea = false, required, hint
                 {l.key}
               </span>
               <Comp
-                value={value[l.key]}
+                value={value[l.key] || ""}
                 onChange={(e) => onChange({ ...value, [l.key]: e.target.value })}
                 placeholder={l.label}
                 rows={textarea ? 3 : undefined}
@@ -135,7 +128,7 @@ function TextInput({ value, onChange, placeholder, type = "text", ...rest }) {
   return (
     <input
       type={type}
-      value={value}
+      value={value || ""}
       onChange={onChange}
       placeholder={placeholder}
       className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 placeholder-slate-400 transition focus:outline-none focus:ring-2 focus:ring-indigo-500/60 focus:border-indigo-500"
@@ -144,10 +137,6 @@ function TextInput({ value, onChange, placeholder, type = "text", ...rest }) {
   );
 }
 
-// Lets an admin build the option list for a "select" or "radio" field.
-// Each option has a stored `value` (what gets saved as the answer) and a
-// tri-lingual `label` (what the applicant sees) — matching the shape
-// DynamicField/normalizeOptions expects on the user-facing form.
 function OptionsEditor({ options, onChange }) {
   const updateOption = (idx, patch) =>
     onChange(options.map((o, i) => (i === idx ? { ...o, ...patch } : o)));
@@ -179,7 +168,7 @@ function OptionsEditor({ options, onChange }) {
             <div key={idx} className="rounded-lg bg-white p-2.5">
               <div className="mb-2 flex items-center justify-between gap-2">
                 <input
-                  value={opt.value}
+                  value={opt.value || ""}
                   onChange={(e) => updateOption(idx, { value: e.target.value })}
                   placeholder="Stored value (e.g. APL)"
                   className="w-40 rounded-md border border-slate-300 px-2 py-1 text-xs font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500/60"
@@ -199,7 +188,7 @@ function OptionsEditor({ options, onChange }) {
                       {l.key}
                     </span>
                     <input
-                      value={opt.label[l.key]}
+                      value={opt.label[l.key] || ""}
                       onChange={(e) =>
                         updateOption(idx, { label: { ...opt.label, [l.key]: e.target.value } })
                       }
@@ -217,11 +206,17 @@ function OptionsEditor({ options, onChange }) {
   );
 }
 
-/* ---------------------------------------------------------------- */
-/* Main component                                                   */
-/* ---------------------------------------------------------------- */
+function EmptyState({ label }) {
+  return (
+    <div className="rounded-lg border border-dashed border-slate-200 py-8 text-center text-sm text-slate-400">
+      {label}
+    </div>
+  );
+}
 
+// ============ MAIN COMPONENT ============
 export default function CreateServices() {
+  // ============ BASIC STATES ============
   const [name, setName] = useState(emptyTri);
   const [description, setDescription] = useState(emptyTri);
   const [price, setPrice] = useState("");
@@ -233,7 +228,6 @@ export default function CreateServices() {
   const [iconPreview, setIconPreview] = useState(null);
   const [subService, setSubService] = useState("");
 
-  // ✅ option & question now match the backend's tri-lingual shape exactly
   const [option, setOption] = useState({ name: { ...emptyTri }, description: { ...emptyTri } });
   const [question, setQuestion] = useState({ title: { ...emptyTri }, description: { ...emptyTri } });
 
@@ -248,7 +242,7 @@ export default function CreateServices() {
       inputType: "text",
       isRequired: true,
       placeholder: { ...emptyTri },
-      options: [], // populated with {value, label:{en,hi,mr}} when inputType is select/radio
+      options: [],
     },
   ]);
 
@@ -261,20 +255,29 @@ export default function CreateServices() {
 
   const [updateService, { isLoading: isUpdating }] = useUpdateServiceMutation();
   const [createService, { isLoading }] = useCreateServiceMutation();
-  const { data: getAllDocumentType } = useGetAllDocumentTypeQuery();
-  const { data: getAllSubServices } = useGetServicesQuery();
+  const { data: getAllDocumentType } = useGetAllDocumentTypeQuery(undefined, {
+    refetchOnMountOrArgChange: false,
+    refetchOnFocus: false,
+    refetchOnReconnect: false,
+  });
+  const { data: getAllSubServices } = useGetServicesQuery(undefined, {
+    refetchOnMountOrArgChange: false,
+    refetchOnFocus: false,
+    refetchOnReconnect: false,
+  });
 
   const isSubmitting = isLoading || isUpdating;
 
+  // ============ LOAD EDITING SERVICE DATA ============
   useEffect(() => {
     if (!editingService) return;
-    setName(editingService.name || emptyTri);
-    setDescription(editingService.description || emptyTri);
+    setName({ ...emptyTri, ...(editingService.name || {}) });
+    setDescription({ ...emptyTri, ...(editingService.description || {}) });
     setPrice(String(editingService.price ?? ""));
-    setProcessingTime(editingService.processingTime || emptyTri);
+    setProcessingTime({ ...emptyTri, ...(editingService.processingTime || {}) });
     setIsActive(editingService.isActive ?? true);
     setDisplayOrder(String(editingService.displayOrder ?? "1"));
-    setWhatsappTemplate(editingService.whatsappTemplate || emptyTri);
+    setWhatsappTemplate({ ...emptyTri, ...(editingService.whatsappTemplate || {}) });
     setSubService(editingService.subService?._id || editingService.subService || "");
 
     setOption({
@@ -300,10 +303,10 @@ export default function CreateServices() {
       setFormFields(
         editingService.formFields.map((f) => ({
           key: f.key || "",
-          label: f.label || { ...emptyTri },
+          label: { ...emptyTri, ...(f.label || {}) },
           inputType: f.inputType || "text",
           isRequired: f.isRequired ?? true,
-          placeholder: f.placeholder || { ...emptyTri },
+          placeholder: { ...emptyTri, ...(f.placeholder || {}) },
           options: Array.isArray(f.options) ? f.options.map(normalizeOptionForEdit) : [],
         })),
       );
@@ -314,8 +317,7 @@ export default function CreateServices() {
     }
   }, [editingService]);
 
-  /* -------------------------- documents -------------------------- */
-
+  // ============ DOCUMENT FUNCTIONS ============
   const updateDocument = (idx, patch) =>
     setDocuments((docs) => docs.map((d, i) => (i === idx ? { ...d, ...patch } : d)));
 
@@ -324,8 +326,7 @@ export default function CreateServices() {
 
   const removeDocument = (idx) => setDocuments((docs) => docs.filter((_, i) => i !== idx));
 
-  /* -------------------------- form fields -------------------------- */
-
+  // ============ FORM FIELD FUNCTIONS ============
   const updateField = (idx, patch) =>
     setFormFields((fields) => fields.map((f, i) => (i === idx ? { ...f, ...patch } : f)));
 
@@ -341,7 +342,7 @@ export default function CreateServices() {
         options: [],
       },
     ]);
-  // convenience: when admin switches a field to select/radio, seed one empty option
+
   const setFieldInputType = (idx, inputType) =>
     updateField(idx, {
       inputType,
@@ -354,8 +355,7 @@ export default function CreateServices() {
 
   const removeField = (idx) => setFormFields((fields) => fields.filter((_, i) => i !== idx));
 
-  /* -------------------------- icon -------------------------- */
-
+  // ============ ICON FUNCTIONS ============
   const handleIconChange = (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -368,8 +368,7 @@ export default function CreateServices() {
     setIconPreview(null);
   };
 
-  /* -------------------------- validation -------------------------- */
-
+  // ============ VALIDATION ============
   const validationErrors = useMemo(() => {
     const errors = [];
     if (!name.en?.trim()) errors.push("Service name (English) is required.");
@@ -390,8 +389,7 @@ export default function CreateServices() {
     return errors;
   }, [name, description, price, formFields]);
 
-  /* -------------------------- submit -------------------------- */
-
+  // ============ SUBMIT ============
   const handleSubmit = async (e) => {
     e.preventDefault();
     setSubmitAttempted(true);
@@ -412,7 +410,6 @@ export default function CreateServices() {
     );
 
     try {
-      // ✅ FIX: Extract subService ID safely and check properly
       const subServiceId = typeof subService === 'object' ? subService?._id : subService;
       const hasSubService = subServiceId &&
         typeof subServiceId === 'string' &&
@@ -420,7 +417,6 @@ export default function CreateServices() {
 
       const fd = new FormData();
 
-      // Send as JSON strings
       fd.append("name", JSON.stringify(name));
       fd.append("description", JSON.stringify(description));
       fd.append("price", price);
@@ -431,7 +427,6 @@ export default function CreateServices() {
       fd.append("displayOrder", displayOrder);
       fd.append("whatsappTemplate", JSON.stringify(whatsappTemplate));
 
-      // ✅ FIX: Use subServiceId instead of subService
       if (hasSubService) {
         fd.append("subService", subServiceId.trim());
       }
@@ -439,7 +434,6 @@ export default function CreateServices() {
       fd.append("option", JSON.stringify(option));
       fd.append("question", JSON.stringify(question));
 
-      // Only append icon if a new file was selected
       if (iconFile) {
         fd.append("iconFile", iconFile);
       }
@@ -460,20 +454,23 @@ export default function CreateServices() {
     }
   };
 
-  const rupees = price !== "" && !Number.isNaN(Number(price)) ? (Number(price) / 100).toFixed(2) : null;
-
+  // ============ RENDER ============
   return (
     <div className="min-h-screen bg-slate-50 pb-28">
       <form onSubmit={handleSubmit} className="mx-auto max-w-5xl space-y-6 px-4 py-8">
-        {/* Header */}
         <div className="rounded-xl border border-slate-200 bg-white px-6 py-5">
-          <h1 className="text-xl font-semibold text-slate-900">
-            {isEditMode ? "Edit Service" : "Create Service"}
-          </h1>
-          <p className="mt-1 text-sm text-slate-500">
-            Add a government service with multilingual content, required documents and dynamic
-            application form fields.
-          </p>
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <div>
+              <h1 className="text-xl font-semibold text-slate-900">
+                {isEditMode ? "Edit Service" : "Create Service"}
+              </h1>
+              <p className="mt-1 text-sm text-slate-500">
+                Add a government service with multilingual content
+              </p>
+            </div>
+
+          </div>
+
         </div>
 
         {submitAttempted && validationErrors.length > 0 && (
@@ -491,7 +488,7 @@ export default function CreateServices() {
         <SectionCard
           icon={FileText}
           title="Basic information"
-          description="Core details shown to citizens across all three languages."
+          description="Core details shown to citizens across English and Marathi."
         >
           <div className="space-y-5">
             <TriLangInput label="Service Name" value={name} onChange={setName} required />
@@ -519,21 +516,18 @@ export default function CreateServices() {
         <SectionCard
           icon={Settings2}
           title="Pricing & settings"
-
           description="Cost, ordering, visibility and category."
         >
           <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
             <div>
-              <FieldLabel required>Fees </FieldLabel>
+              <FieldLabel required>Fees</FieldLabel>
               <TextInput
                 type="number"
                 min="0"
                 value={price}
-
                 onChange={(e) => setPrice(e.target.value)}
-                placeholder="e.g. ₹200 "
+                placeholder="e.g. 200"
               />
-
             </div>
 
             <div>
@@ -571,7 +565,6 @@ export default function CreateServices() {
             <div className="flex items-end">
               <label className="flex h-[38px] items-center gap-2 text-sm font-medium text-slate-700">
                 <input
-                  id="isActive"
                   type="checkbox"
                   checked={isActive}
                   onChange={(e) => setIsActive(e.target.checked)}
@@ -614,7 +607,7 @@ export default function CreateServices() {
           </div>
         </SectionCard>
 
-        {/* Category (option) */}
+        {/* Category */}
         <SectionCard icon={Layers} title="Category" description="Groups this service under a category, shown in-app.">
           <div className="space-y-5">
             <TriLangInput
@@ -632,7 +625,7 @@ export default function CreateServices() {
           </div>
         </SectionCard>
 
-        {/* FAQ (question) */}
+        {/* FAQ */}
         <SectionCard icon={HelpCircle} title="FAQ / Question" description="A single frequently asked question shown with this service.">
           <div className="space-y-5">
             <TriLangInput
@@ -736,70 +729,80 @@ export default function CreateServices() {
             <EmptyState label="No form fields added yet." />
           ) : (
             <div className="space-y-4">
-              {formFields.map((field, idx) => (
-                <div key={idx} className="space-y-3 rounded-lg border border-slate-200 p-4">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-semibold uppercase tracking-wide text-slate-400">
-                      Field #{idx + 1}
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => removeField(idx)}
-                      className="p-1 text-slate-400 transition hover:text-red-600"
-                    >
-                      <Trash2 size={16} />
-                    </button>
-                  </div>
+              {formFields.map((field, idx) => {
+                return (
+                  <div key={idx} className="space-y-3 rounded-lg border border-slate-200 p-4">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <span className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+                        Field #{idx + 1}
+                      </span>
 
-                  <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
-                    <TextInput
-                      value={field.key}
-                      onChange={(e) => updateField(idx, { key: e.target.value })}
-                      placeholder="Field key (e.g. fatherName)"
-                    />
-                    <select
-                      value={field.inputType}
-                      onChange={(e) => setFieldInputType(idx, e.target.value)}
-                      className="rounded-md border border-slate-300 px-2 py-1.5 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/60"
-                    >
-                      {INPUT_TYPES.map((t) => (
-                        <option key={t.value} value={t.value}>
-                          {t.label}
-                        </option>
-                      ))}
-                    </select>
-                    <label className="flex items-center gap-1.5 text-xs text-slate-600">
-                      <input
-                        type="checkbox"
-                        checked={field.isRequired}
-                        onChange={(e) => updateField(idx, { isRequired: e.target.checked })}
-                        className="h-3.5 w-3.5 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+                      <div className="flex flex-wrap items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => removeField(idx)}
+                          className="p-1 text-slate-400 transition hover:text-red-600"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+                      <TextInput
+                        value={field.key}
+                        onChange={(e) => updateField(idx, { key: e.target.value })}
+                        placeholder="Field key (e.g. fatherName)"
                       />
-                      Required
-                    </label>
-                  </div>
+                      <select
+                        value={field.inputType}
+                        onChange={(e) => setFieldInputType(idx, e.target.value)}
+                        className="rounded-md border border-slate-300 px-2 py-1.5 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/60"
+                      >
+                        {INPUT_TYPES.map((t) => (
+                          <option key={t.value} value={t.value}>
+                            {t.label}
+                          </option>
+                        ))}
+                      </select>
+                      <label className="flex items-center gap-1.5 text-xs text-slate-600">
+                        <input
+                          type="checkbox"
+                          checked={field.isRequired}
+                          onChange={(e) => updateField(idx, { isRequired: e.target.checked })}
+                          className="h-3.5 w-3.5 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+                        />
+                        Required
+                      </label>
+                    </div>
 
-                  <TriLangInput
-                    label="Label"
-                    value={field.label}
-                    onChange={(v) => updateField(idx, { label: v })}
-                    showError={submitAttempted}
-                  />
-                  <TriLangInput
-                    label="Placeholder"
-                    value={field.placeholder}
-                    onChange={(v) => updateField(idx, { placeholder: v })}
-                    showError={submitAttempted}
-                  />
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <FieldLabel>Label</FieldLabel>
+                      </div>
+                      <TriLangInput
+                        value={field.label}
+                        onChange={(v) => updateField(idx, { label: v })}
+                        showError={submitAttempted}
+                      />
+                    </div>
 
-                  {OPTION_BASED_TYPES.includes(field.inputType) && (
-                    <OptionsEditor
-                      options={field.options}
-                      onChange={(opts) => updateField(idx, { options: opts })}
+                    <TriLangInput
+                      label="Placeholder"
+                      value={field.placeholder}
+                      onChange={(v) => updateField(idx, { placeholder: v })}
+                      showError={submitAttempted}
                     />
-                  )}
-                </div>
-              ))}
+
+                    {OPTION_BASED_TYPES.includes(field.inputType) && (
+                      <OptionsEditor
+                        options={field.options}
+                        onChange={(opts) => updateField(idx, { options: opts })}
+                      />
+                    )}
+                  </div>
+                );
+              })}
             </div>
           )}
         </SectionCard>
@@ -807,14 +810,15 @@ export default function CreateServices() {
 
       {/* Sticky action bar */}
       <div className="fixed inset-x-0 bottom-0 border-t border-slate-200 bg-white/95 backdrop-blur">
-        <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-3">
-          <div className="text-sm">
+        <div className="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-3 px-4 py-3">
+          <div className="flex flex-wrap items-center gap-4 text-sm">
             {submitAttempted && validationErrors.length === 0 && (
               <span className="flex items-center gap-1.5 text-emerald-600">
                 <CheckCircle2 size={16} /> Ready to submit
               </span>
             )}
           </div>
+
           <div className="flex items-center gap-3">
             <button
               type="button"
@@ -829,7 +833,9 @@ export default function CreateServices() {
               disabled={isSubmitting}
               className="flex items-center gap-2 rounded-lg bg-[#041A40] px-5 py-2.5 text-sm font-medium text-white transition disabled:opacity-60"
             >
-              {isSubmitting && <Loader2 size={16} className="animate-spin" />}
+              {isSubmitting && (
+                <Loader2 size={16} className="animate-spin" />
+              )}
               {isEditMode ? "Update Service" : "Create Service"}
             </button>
           </div>
@@ -839,10 +845,3 @@ export default function CreateServices() {
   );
 }
 
-function EmptyState({ label }) {
-  return (
-    <div className="rounded-lg border border-dashed border-slate-200 py-8 text-center text-sm text-slate-400">
-      {label}
-    </div>
-  );
-}

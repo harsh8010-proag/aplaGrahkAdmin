@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from "react";
+import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   CreditCard,
@@ -10,6 +11,7 @@ import {
   FileText,
   ChevronLeft,
   ChevronRight,
+  RefreshCw,
 } from "lucide-react";
 import StatCard from "../../../shared/components/StatCard";
 import Button from "../../../shared/components/Button";
@@ -63,6 +65,11 @@ export default function Payments() {
   const [updatingId, setUpdatingId] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [activeFilter, setActiveFilter] = useState("All"); // "All" | "Success" | "Failed"
+  const [searchTerm, setSearchTerm] = useState("");
+
+  useEffect(() => {
+    refetch();
+  }, [refetch]);
 
   const columns = [
     "Transaction ID",
@@ -154,11 +161,19 @@ export default function Payments() {
     },
   ];
 
-  // Apply the active tab filter
+  // Apply the active tab filter + search
   const filteredPayments = useMemo(() => {
-    if (activeFilter === "All") return sortedPayments;
-    return sortedPayments.filter((p) => p.payment === activeFilter);
-  }, [sortedPayments, activeFilter]);
+    let result = activeFilter === "All" ? sortedPayments : sortedPayments.filter((p) => p.payment === activeFilter);
+    if (searchTerm.trim()) {
+      const q = searchTerm.trim().toLowerCase();
+      result = result.filter((p) =>
+        p.userName.toLowerCase().includes(q) ||
+        p.transactionId.toLowerCase().includes(q) ||
+        p.applicationId.toLowerCase().includes(q)
+      );
+    }
+    return result;
+  }, [sortedPayments, activeFilter, searchTerm]);
 
   const totalPages = Math.max(
     1,
@@ -573,7 +588,7 @@ export default function Payments() {
             </div>
           </div>
 
-          <div className="flex flex-col sm:flex-row items-center space-y-3 sm:space-y-0 sm:space-x-4 w-full md:w-auto">
+          <div className="flex flex-col sm:flex-row items-center space-y-3 sm:space-y-0 sm:space-x-2 w-full md:w-auto">
             <select className="w-full sm:w-auto px-4 py-2 text-sm font-bold text-gray-700 bg-white border border-gray-200 rounded-full focus:outline-none focus:ring-2 focus:ring-[#FF8303]/20 appearance-none pr-8 bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20width%3D%2212%22%20height%3D%228%22%20viewBox%3D%220%200%2012%208%20%22%20fill%3D%22none%22%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%3E%3Cpath%20d%3D%22M1%201.5L6%206.5L11%201.5%22%20stroke%3D%22%23666666%22%20stroke-width%3D%221.5%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22/%3E%3C/svg%3E')] bg-[length:12px_8px] bg-no-repeat bg-[position:calc(100%-1rem)_center]">
               <option>All Status</option>
               <option>Success</option>
@@ -585,7 +600,17 @@ export default function Payments() {
               placeholder="Search user"
               showFilter={false}
               className="w-full sm:w-auto"
+              value={searchTerm}
+              onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
             />
+            <button
+              onClick={refetch}
+              disabled={isLoading}
+              title="Refresh"
+              className="p-2.5 bg-gray-50 border border-gray-200 rounded-full text-gray-600 hover:bg-gray-100 hover:border-[#FF8303] hover:text-[#FF8303] transition-colors focus:outline-none focus:ring-2 focus:ring-[#FF8303]/20 shrink-0 disabled:opacity-60 disabled:cursor-not-allowed"
+            >
+              <RefreshCw className={`w-4 h-4 ${isLoading ? "animate-spin" : ""}`} />
+            </button>
           </div>
         </div>
 

@@ -1,5 +1,4 @@
 import { createApi } from "@reduxjs/toolkit/query/react";
-import wsService from "../../utils/websocketService";
 import { baseQueryWithReauth } from "../../middleware/baseQueryMiddleware";
 
 export const applicationsApi = createApi({
@@ -10,44 +9,6 @@ export const applicationsApi = createApi({
     getAplications: builder.query({
       query: () => "/v1/admin/get-applications",
       providesTags: ["Applications"],
-
-      // ── Real-time: refetch automatically when the backend broadcasts
-      // a NEW_APPLICATION event over WebSocket.
-      async onCacheEntryAdded(
-        _arg,
-        { updateCachedData, cacheDataLoaded, cacheEntryRemoved, dispatch }
-      ) {
-        // Wait for the initial REST call to succeed before attaching the WS
-        await cacheDataLoaded;
-
-        // Ensure the WS is connected (no-op if already open)
-        wsService.connect();
-
-        // Subscribe to new-application events
-        const invalidateApplications = (type, data) => {
-          console.log(`📩 [WS] ${type} received:`, data);
-          dispatch(applicationsApi.util.invalidateTags(["Applications"]));
-        };
-
-        const unsubscribers = [
-          wsService.addListener("NEW_APPLICATION", (data) =>
-            invalidateApplications("NEW_APPLICATION", data),
-          ),
-          wsService.addListener("APPLICATION_STATUS_UPDATED", (data) =>
-            invalidateApplications("APPLICATION_STATUS_UPDATED", data),
-          ),
-          wsService.addListener("APPLICATION_DOCUMENT_STATUS_UPDATED", (data) =>
-            invalidateApplications("APPLICATION_DOCUMENT_STATUS_UPDATED", data),
-          ),
-          wsService.addListener("SERVICE_UPDATED", (data) =>
-            invalidateApplications("SERVICE_UPDATED", data),
-          ),
-        ];
-
-        // Clean up when the cache entry is removed (no subscribers left)
-        await cacheEntryRemoved;
-        unsubscribers.forEach((unsubscribe) => unsubscribe());
-      },
     }),
 
     getApplicationById: builder.query({

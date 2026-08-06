@@ -1,7 +1,6 @@
 import React, { useMemo, useState, useEffect } from "react";
 import { Eye, Mail, MessageSquareText, Phone, RefreshCw, Ticket, User2, X } from "lucide-react";
 import { useGetAllContactsQuery, useUpdateContactStatusMutation } from "../../../redux/api/contactsApi";
-import Button from "../../../shared/components/Button";
 import SearchInput from "../../../shared/components/SearchInput";
 import Table from "../../../shared/components/Table";
 
@@ -21,16 +20,29 @@ export default function Support() {
   const { data, isLoading, isFetching, refetch } = useGetAllContactsQuery();
   const [updateContactStatus] = useUpdateContactStatusMutation();
   const [search, setSearch] = useState("");
+  const [ticketTab, setTicketTab] = useState("All");
   const [updatingId, setUpdatingId] = useState(null);
   const [selectedContact, setSelectedContact] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
   const ticketsPerPage = 5;
 
+  useEffect(() => {
+    refetch();
+  }, [refetch]);
+
   const contacts = data?.contacts || [];
+
+  const tabFilteredContacts = useMemo(() => {
+    if (ticketTab === "All") return contacts;
+    return contacts.filter((c) => c.status === ticketTab);
+  }, [contacts, ticketTab]);
+  const getTicketId = (ticket) =>
+    `#${ticket?._id?.slice(-6).toUpperCase() || "TKT"}`;
+
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
-    if (!q) return contacts;
-    return contacts.filter((c) => {
+    if (!q) return tabFilteredContacts;
+    return tabFilteredContacts.filter((c) => {
       const ticket = getTicketId(c);
       return [
         ticket,
@@ -42,7 +54,7 @@ export default function Support() {
         c.status,
       ].some((v) => String(v || "").toLowerCase().includes(q));
     });
-  }, [contacts, search]);
+  }, [tabFilteredContacts, search]);
 
   const totalPages = Math.ceil(filtered.length / ticketsPerPage) || 1;
   const indexOfLast = currentPage * ticketsPerPage;
@@ -83,16 +95,15 @@ export default function Support() {
   }, [totalPages, currentPage]);
 
 
-  const getTicketId = (ticket) =>
-    `#${ticket?._id?.slice(-6).toUpperCase() || "TKT"}`;
+
 
 
 
   const stats = [
-    { title: "Total Tickets", value: contacts.length, icon: Ticket },
-    { title: "Pending", value: contacts.filter((c) => c.status === "Pending").length, icon: RefreshCw },
-    { title: "In Progress", value: contacts.filter((c) => c.status === "In Progress").length, icon: MessageSquareText },
-    { title: "Resolved", value: contacts.filter((c) => c.status === "Resolved").length, icon: User2 },
+    { label: "Total Tickets", value: "All", count: contacts.length, color: "#041A40", bg: "#E1F5FE", icon: Ticket },
+    { label: "Pending", value: "Pending", count: contacts.filter((c) => c.status === "Pending").length, color: "#F97316", bg: "#FFEDD5", icon: RefreshCw },
+    { label: "In Progress", value: "In Progress", count: contacts.filter((c) => c.status === "In Progress").length, color: "#2563EB", bg: "#DBEAFE", icon: MessageSquareText },
+    { label: "Resolved", value: "Resolved", count: contacts.filter((c) => c.status === "Resolved").length, color: "#16A34A", bg: "#DCFCE7", icon: User2 },
   ];
 
   const handleStatus = async (contactId, status) => {
@@ -216,24 +227,39 @@ export default function Support() {
           <h1 className="text-3xl font-black text-[#041A40]">Support Tickets</h1>
           <p className="text-gray-500 font-medium mt-1">Track user contact requests with ticket IDs in one responsive dashboard.</p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
           <SearchInput value={search} onChange={(e) => {
             setSearch(e.target.value);
             setCurrentPage(1);
           }} placeholder="Search tickets..." />
-          <Button onClick={refetch} icon={RefreshCw} className="px-4">Refresh</Button>
+          <button
+            onClick={refetch}
+            disabled={isFetching}
+            title="Refresh"
+            className="p-2.5 bg-gray-50 border border-gray-200 rounded-full text-gray-600 hover:bg-gray-100 hover:border-[#FF8303] hover:text-[#FF8303] transition-colors focus:outline-none focus:ring-2 focus:ring-[#FF8303]/20 shrink-0 disabled:opacity-60 disabled:cursor-not-allowed"
+          >
+            <RefreshCw className={`w-4 h-4 ${isFetching ? "animate-spin" : ""}`} />
+          </button>
         </div>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
         {stats.map((s) => (
-          <div key={s.title} className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm flex items-center justify-between">
+          <button
+            key={s.label}
+            onClick={() => { setTicketTab(s.value); setCurrentPage(1); }}
+            className="text-left bg-white rounded-2xl p-5 border-2 transition-all shadow-sm flex items-center justify-between"
+            style={ticketTab === s.value
+              ? { borderColor: s.color, backgroundColor: s.bg }
+              : { borderColor: "#F3F4F6", backgroundColor: "white" }
+            }
+          >
             <div>
-              <div className="text-sm text-gray-500 font-semibold">{s.title}</div>
-              <div className="text-3xl font-black text-[#041A40] mt-1">{s.value}</div>
+              <div className="text-sm font-semibold" style={{ color: ticketTab === s.value ? s.color : "#6B7280" }}>{s.label}</div>
+              <div className="text-3xl font-black mt-1" style={{ color: ticketTab === s.value ? s.color : "#041A40" }}>{s.count}</div>
             </div>
-            <s.icon className="w-10 h-10 text-[#F97316]" />
-          </div>
+            <s.icon className="w-10 h-10" style={{ color: s.color, opacity: ticketTab === s.value ? 1 : 0.4 }} />
+          </button>
         ))}
       </div>
 
