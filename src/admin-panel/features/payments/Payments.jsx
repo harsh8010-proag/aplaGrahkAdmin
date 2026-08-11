@@ -545,8 +545,7 @@ export default function Payments() {
 
       {/* Table Section */}
       <div
-        className="rounded-3xl p-6 shadow-sm border border-slate-100"
-        style={{ backgroundColor: "#D9D9D938" }}
+        className="bg-white rounded-[20px] p-6 shadow-sm border border-slate-100"
       >
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 space-y-4 md:space-y-0">
           <div className="flex flex-col gap-3">

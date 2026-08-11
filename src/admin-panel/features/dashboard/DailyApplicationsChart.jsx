@@ -12,8 +12,7 @@ import Skeleton from "../../../shared/components/Skeleton";
 export function DailyApplicationsChartSkeleton() {
   return (
     <div
-      className="rounded-3xl p-6 shadow-sm border border-slate-100 h-full flex flex-col"
-      style={{ backgroundColor: "#D9D9D938" }}
+      className="bg-white rounded-[20px] p-6 shadow-sm hover:shadow-md transition-shadow duration-300 border border-slate-100 h-full flex flex-col relative"
     >
       <div className="flex flex-col sm:flex-row justify-between sm:items-start mb-6 space-y-4 sm:space-y-0">
         <div className="space-y-2">
@@ -36,8 +35,7 @@ export function DailyApplicationsChartSkeleton() {
 export default function DailyApplicationsChart({ data }) {
   return (
     <div
-      className="rounded-3xl p-6 shadow-sm border border-slate-100 h-full flex flex-col"
-      style={{ backgroundColor: "#D9D9D938" }}
+      className="bg-white rounded-[20px] p-6 shadow-sm hover:shadow-md transition-shadow duration-300 border border-slate-100 h-full flex flex-col relative"
     >
       <div className="flex flex-col sm:flex-row justify-between sm:items-start mb-6 space-y-4 sm:space-y-0">
         <div>

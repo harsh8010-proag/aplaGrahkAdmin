@@ -248,17 +248,25 @@ export default function Support() {
           <button
             key={s.label}
             onClick={() => { setTicketTab(s.value); setCurrentPage(1); }}
-            className="text-left bg-white rounded-2xl p-5 border-2 transition-all shadow-sm flex items-center justify-between"
+            className="text-left relative rounded-[20px] p-4 shadow-sm hover:shadow-md hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between border group"
             style={ticketTab === s.value
               ? { borderColor: s.color, backgroundColor: s.bg }
               : { borderColor: "#F3F4F6", backgroundColor: "white" }
             }
           >
-            <div>
-              <div className="text-sm font-semibold" style={{ color: ticketTab === s.value ? s.color : "#6B7280" }}>{s.label}</div>
-              <div className="text-3xl font-black mt-1" style={{ color: ticketTab === s.value ? s.color : "#041A40" }}>{s.count}</div>
+            <div className="flex justify-between items-start mb-3 w-full">
+              <h3 className="font-bold text-xs leading-tight max-w-[120px]" style={{ color: ticketTab === s.value ? s.color : "#6B7280" }}>{s.label}</h3>
+              <div 
+                className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0" 
+                style={{ backgroundColor: ticketTab === s.value ? "rgba(255,255,255,0.6)" : s.bg }}
+              >
+                <s.icon className="w-5 h-5" style={{ color: s.color }} />
+              </div>
             </div>
-            <s.icon className="w-10 h-10" style={{ color: s.color, opacity: ticketTab === s.value ? 1 : 0.4 }} />
+            
+            <div className="text-2xl font-bold mt-1" style={{ color: ticketTab === s.value ? s.color : "#111827" }}>
+              {s.count}
+            </div>
           </button>
         ))}
       </div>

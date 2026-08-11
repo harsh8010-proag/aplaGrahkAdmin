@@ -354,9 +354,9 @@ export default function ApplicationDetails() {
               </h1>
               <StatusBadge status={app?.status} />
             </div>
-            <p className="text-sm font-bold text-[#041A40] mt-1">
-              Service ID: {app?.serviceId?._id} <span className="mx-2">|</span>{" "}
-              Submitted On {formatDate(app.createdAt)}
+            <p className="text-sm font-bold text-gray-500 mt-1">
+              Service: <span className="text-[#041A40]">{app?.serviceId?.name?.en || app?.serviceId?.name || app?.serviceId?._id || "N/A"}</span> <span className="mx-2">|</span>{" "}
+              Submitted On <span className="text-[#041A40]">{formatDate(app.createdAt)}</span>
             </p>
           </div>
         </div>
@@ -484,7 +484,16 @@ export default function ApplicationDetails() {
                     Application Information
                   </h2>
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    <InputField label="Status" value={app.status} />
+                    <InputField label="Application Status" value={app.status} />
+                    <InputField label="Payment Status" value={app.paymentStatus || "Pending"} />
+                    <InputField
+                      label="Service"
+                      value={app?.serviceId?.name?.en || app?.serviceId?.name || "N/A"}
+                    />
+                    <InputField
+                      label="Submitted On"
+                      value={formatDate(app.createdAt)}
+                    />
                     <InputField
                       label="Last Updated"
                       value={formatDate(app.updatedAt)}

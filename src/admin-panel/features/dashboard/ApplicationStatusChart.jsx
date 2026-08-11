@@ -4,8 +4,7 @@ import Skeleton from '../../../shared/components/Skeleton'
 export function ApplicationStatusChartSkeleton() {
   return (
     <div
-      className="rounded-3xl p-6 shadow-sm border border-slate-100 h-full flex flex-col"
-      style={{ backgroundColor: "#D9D9D938" }}
+      className="bg-white rounded-[20px] p-6 shadow-sm hover:shadow-md transition-shadow duration-300 border border-slate-100 h-full flex flex-col relative"
     >
       <div className="mb-2 space-y-2">
         <Skeleton className="h-5 w-36" />
@@ -32,8 +31,7 @@ export default function ApplicationStatusChart({ data }) {
 
   return (
     <div
-      className="rounded-3xl p-6 shadow-sm border border-slate-100 h-full flex flex-col"
-      style={{ backgroundColor: "#D9D9D938" }}
+      className="bg-white rounded-[20px] p-6 shadow-sm hover:shadow-md transition-shadow duration-300 border border-slate-100 h-full flex flex-col relative"
     >
       <div className="mb-2">
         <h3 className="font-bold text-gray-900 text-lg">Application Status</h3>

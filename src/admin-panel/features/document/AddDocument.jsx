@@ -221,7 +221,7 @@ const AddDocumentModal = () => {
           </div>
 
           {/* Hindi */}
-          <div>
+          {/* <div>
             <label className="text-sm font-semibold">Name (Hindi)</label>
             <input
               type="text"
@@ -231,10 +231,10 @@ const AddDocumentModal = () => {
               placeholder="आधार कार्ड"
               className="w-full mt-2 border rounded-xl p-3"
             />
-          </div>
+          </div> */}
 
           {/* Marathi */}
-          <div className="md:col-span-2">
+          <div className="md:col-span-1">
             <label className="text-sm font-semibold">Name (Marathi)</label>
             <input
               type="text"
@@ -309,7 +309,7 @@ const AddDocumentModal = () => {
             />
           </div>
 
-          <div>
+          {/* <div>
             <label className="text-sm font-semibold">
               Instructions (Hindi)
             </label>
@@ -320,7 +320,7 @@ const AddDocumentModal = () => {
               onChange={handleChange}
               className="w-full mt-2 border rounded-xl p-3 resize-none"
             />
-          </div>
+          </div> */}
 
           <div>
             <label className="text-sm font-semibold">

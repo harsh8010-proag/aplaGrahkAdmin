@@ -314,7 +314,7 @@ export default function Users() {
         </Button>
       </div>
 
-      <div className="rounded-3xl p-6 shadow-sm border border-slate-100" style={{ backgroundColor: "#D9D9D938" }}>
+      <div className="bg-white rounded-[20px] p-6 shadow-sm border border-slate-100">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 space-y-4 sm:space-y-0">
           <h2 className="text-xl font-bold text-[#041A40]">All Users</h2>
           <div className="flex items-center gap-2">

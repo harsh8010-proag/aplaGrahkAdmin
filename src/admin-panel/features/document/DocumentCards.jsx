@@ -147,12 +147,12 @@ const DocumentCards = () => {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           {paginatedDocuments?.map((document) => (
             <div
-              key={document.id}
-              className="bg-[#D9D9D938] rounded-[20px] p-5 border border-gray-100 shadow-sm flex flex-col"
+              key={document._id || document.id}
+              className="bg-white rounded-[20px] p-5 border border-gray-100 shadow-sm hover:shadow-md hover:border-[#FF8303]/30 hover:-translate-y-1 transition-all duration-300 flex flex-col group relative"
             >
               {/* Top */}
               <div className="flex justify-between items-start mb-4">
-                <div className="w-12 h-12 bg-[#FF8303] rounded-full flex items-center justify-center text-white">
+                <div className="w-12 h-12 bg-orange-50 group-hover:bg-[#FF8303] transition-colors duration-300 rounded-full flex items-center justify-center text-[#FF8303] group-hover:text-white">
                   <FileText className="w-6 h-6" />
                 </div>
 
@@ -160,23 +160,21 @@ const DocumentCards = () => {
                   {/* Toggle UI */}
                   <div
                     onClick={() => handleToggle(document)}
-                    className={`w-[42px] h-6 rounded-full border-2 relative cursor-pointer ${
-                      document.isActive
+                    className={`w-[42px] h-6 rounded-full border-2 relative cursor-pointer ${document.isActive
                         ? "bg-[#041A40] border-[#041A40]"
                         : "bg-white border-[#041A40]"
-                    }`}
+                      }`}
                   >
                     <span
-                      className={`absolute top-[2px] left-[2px] w-4 h-4 rounded-full transition-transform ${
-                        document.isActive
+                      className={`absolute top-[2px] left-[2px] w-4 h-4 rounded-full transition-transform ${document.isActive
                           ? "bg-white translate-x-[18px]"
                           : "bg-[#041A40]"
-                      }`}
+                        }`}
                     ></span>
                   </div>
 
                   <button
-                    className="text-[#FF8303]"
+                    className="text-[#FF8303] hover:scale-110 transition-transform focus:outline-none cursor-pointer"
                     onClick={() => {
                       navigate("/document/add", {
                         state: {
@@ -189,7 +187,7 @@ const DocumentCards = () => {
                   </button>
 
                   <button
-                    className="text-red-500"
+                    className="text-red-500 hover:scale-110 transition-transform focus:outline-none cursor-pointer"
                     onClick={() => handleDelete(document._id)}
                   >
                     <Trash2 className="w-4 h-4" />
@@ -207,17 +205,17 @@ const DocumentCards = () => {
               </p>
 
               {/* Fee & Time */}
-              <div className="grid grid-cols-2 gap-3 mb-5">
-                <div className="border border-[#F6D1A8] rounded-xl px-3 py-2 bg-white">
+              {/* <div className="grid grid-cols-2 gap-3 mb-5">
+                <div className="border border-[#F6D1A8] group-hover:border-[#FF8303]/50 transition-colors duration-300 rounded-xl px-3 py-2 bg-white">
                   <p className="text-[11px] text-gray-400">Fees</p>
                   <p className="text-sm font-bold">{document.fees}</p>
                 </div>
 
-                <div className="border border-[#F6D1A8] rounded-xl px-3 py-2 bg-white">
+                <div className="border border-[#F6D1A8] group-hover:border-[#FF8303]/50 transition-colors duration-300 rounded-xl px-3 py-2 bg-white">
                   <p className="text-[11px] text-gray-400">Time</p>
                   <p className="text-sm font-bold">{document.time}</p>
                 </div>
-              </div>
+              </div> */}
 
               {/* Documents */}
               <div className="mt-auto">
@@ -229,7 +227,7 @@ const DocumentCards = () => {
                   {document.allowedFormats.map((doc, index) => (
                     <span
                       key={index}
-                      className="px-3 py-1 bg-white border border-gray-200 rounded-full text-[11px] font-bold text-gray-600"
+                      className="px-3 py-1 bg-gray-50 border border-gray-200 group-hover:border-gray-300 transition-colors duration-300 rounded-full text-[11px] font-bold text-gray-600 shadow-sm"
                     >
                       {doc}
                     </span>
@@ -263,11 +261,10 @@ const DocumentCards = () => {
               <button
                 key={page}
                 onClick={() => handlePageChange(page)}
-                className={`px-3 py-1.5 rounded-lg text-sm font-bold ${
-                  currentPage === page
+                className={`px-3 py-1.5 rounded-lg text-sm font-bold ${currentPage === page
                     ? "bg-[#FF8303] text-white"
                     : "border border-gray-200 text-[#041A40] hover:bg-gray-100"
-                }`}
+                  }`}
               >
                 {page}
               </button>

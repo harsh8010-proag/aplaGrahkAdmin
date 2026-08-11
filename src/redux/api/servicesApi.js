@@ -14,6 +14,16 @@ export const servicesApi = createApi({
       query: (id) => `/v1/services/${id}`,
       providesTags: ["Services"],
     }),
+    getServiceApplications: builder.query({
+      query: ({ id, page = 1, limit = 10 }) => ({
+        url: `/v1/services/${id}/applications`,
+        params: { page, limit },
+      }),
+      providesTags: (result, error, arg) => [
+        { type: "Applications", id: arg.id },
+        { type: "Applications", id: "LIST" },
+      ],
+    }),
     createService: builder.mutation({
       query: (newService) => ({
         url: "/v1/services",
@@ -52,6 +62,7 @@ export const servicesApi = createApi({
 export const {
   useGetServicesQuery,
   useGetServiceByIdQuery,
+  useGetServiceApplicationsQuery,
   useCreateServiceMutation,
   useUpdateServiceMutation,
   useToggleServiceStatusMutation,

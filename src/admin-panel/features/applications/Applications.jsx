@@ -22,6 +22,42 @@ import {
   useUpdateApplicationStatusMutation,
 } from "../../../redux/api/applicationsApi";
 
+// ---- Shared helpers so table, mobile card, search, and CSV export all agree ----
+const getApplicantName = (app) =>
+  app.formData?.applicantName ||
+  app.formData?.fullName ||
+  app.formData?.headOfFamily ||
+  app.formData?.name ||
+  app.formData?.fullname ||
+  app.userId?.name ||
+  "Unknown";
+
+const getApplicantPhone = (app) =>
+  app.formData?.mobileNumber ||
+  app.formData?.phone ||
+  app.formData?.mobile ||
+  app.userId?.mobileNumber ||
+  "N/A";
+
+const isSameDay = (a, b) =>
+  a.getFullYear() === b.getFullYear() &&
+  a.getMonth() === b.getMonth() &&
+  a.getDate() === b.getDate();
+
+// Real trend calc — no hardcoded percentages.
+function calculateTrend(current, previous) {
+  if (previous === 0) {
+    if (current === 0) return { trend: "0%", trendText: "No change from yesterday" };
+    return { trend: "+100%", trendText: "Increased than yesterday" };
+  }
+  const pct = Math.round(((current - previous) / previous) * 100);
+  const sign = pct >= 0 ? "+" : "";
+  return {
+    trend: `${sign}${pct}%`,
+    trendText: pct >= 0 ? "Increased than yesterday" : "Decreased than yesterday",
+  };
+}
+
 const SkeletonRow = ({ idx }) => (
   <tr key={idx} className="border-b border-gray-100 animate-pulse">
     <td className="px-6 py-4">
@@ -115,19 +151,14 @@ export default function Applications() {
   const { data: allApplications, isLoading, refetch } = useGetAplicationsQuery();
   const [updateApplicationStatus] = useUpdateApplicationStatusMutation();
   const [updatingId, setUpdatingId] = useState(null);
-  // const [statusFilter, setStatusFilter] = useState("All Status");
-  // const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
+  const [statusFilter, setStatusFilter] = useState("All Status");
+  const [searchTerm, setSearchTerm] = useState("");
   const applicationsPerPage = 6;
 
   useEffect(() => {
     refetch();
   }, [refetch]);
-
-  const handleStatusFilterChange = (value) => {
-    setStatusFilter(value);
-    setCurrentPage(1);
-  };
 
   const handleSearchChange = (e) => {
     setSearchTerm(e.target.value);
@@ -146,8 +177,6 @@ export default function Applications() {
     }
   };
 
-  // console.log("All Applications:", allApplications);
-
   const applications = allApplications?.applications || [];
 
   // Newest application pehle dikhane ke liye
@@ -155,69 +184,34 @@ export default function Applications() {
     (a, b) => new Date(b.createdAt) - new Date(a.createdAt),
   );
 
-  const pendingCount = applications.filter(
-    (app) => app.status === "Pending",
+  const pendingCount = applications.filter((app) => app.status === "Pending").length;
+  const approvedCount = applications.filter((app) => app.status === "Completed").length;
+  const rejectedCount = applications.filter((app) => app.status === "Rejected").length;
+  const inProgressCount = applications.filter((app) => app.status === "In Progress").length;
+
+  // ---- Real trend: submitted today vs submitted yesterday, from createdAt ----
+  const today = new Date();
+  const yesterday = new Date();
+  yesterday.setDate(today.getDate() - 1);
+
+  const submittedToday = applications.filter((app) =>
+    isSameDay(new Date(app.createdAt), today),
+  ).length;
+  const submittedYesterday = applications.filter((app) =>
+    isSameDay(new Date(app.createdAt), yesterday),
   ).length;
 
-  const approvedCount = applications.filter(
-    (app) => app.status === "Completed",
-  ).length;
-  const rejectedCount = applications.filter(
-    (app) => app.status === "Rejected",
-  ).length;
-  const completedCound = applications.filter(
-    (app) => app.status === "Completed",
-  ).length;
-  //   const rejectedCount = applications.filter(
-  //   (app) => app.status === "Rejected",
-  // ).length;
-  // const completedCound = applications.filter(
-  //   (app) => app.status === "Completed",
-  // ).length;
-  const inProgressCount = applications.filter(
-    (app) => app.status === "In Progress",
-  ).length;
+  const allTrend = calculateTrend(submittedToday, submittedYesterday);
+  // Pending/Approved/Rejected have no status-change timestamp available (only
+  // createdAt = submission time), so their trend stays null rather than being guessed.
 
   const statusTabs = [
-    {
-      label: "All",
-      value: "All Status",
-      count: applications.length,
-      color: "#041A40",
-      bg: "#E1F5FE",
-    },
-    {
-      label: "Pending",
-      value: "Pending",
-      count: pendingCount,
-      color: "#F97316",
-      bg: "#FFEDD5",
-    },
-    {
-      label: "In Progress",
-      value: "In Progress",
-      count: inProgressCount,
-      color: "#3B82F6",
-      bg: "#DBEAFE",
-    },
-    {
-      label: "Completed",
-      value: "Completed",
-      count: completedCound,
-      color: "#22C55E",
-      bg: "#DCFCE7",
-    },
-    {
-      label: "Rejected",
-      value: "Rejected",
-      count: rejectedCount,
-      color: "#EF4444",
-      bg: "#FEE2E2",
-    },
+    { label: "All", value: "All Status", count: applications.length, color: "#041A40", bg: "#E1F5FE" },
+    { label: "Pending", value: "Pending", count: pendingCount, color: "#F97316", bg: "#FFEDD5" },
+    { label: "In Progress", value: "In Progress", count: inProgressCount, color: "#3B82F6", bg: "#DBEAFE" },
+    { label: "Completed", value: "Completed", count: approvedCount, color: "#22C55E", bg: "#DCFCE7" },
+    { label: "Rejected", value: "Rejected", count: rejectedCount, color: "#EF4444", bg: "#FEE2E2" },
   ];
-
-  const [statusFilter, setStatusFilter] = useState("All Status");
-  const [searchTerm, setSearchTerm] = useState("");
 
   const normalizeSearch = (value) =>
     String(value || "")
@@ -226,19 +220,13 @@ export default function Applications() {
       .trim();
 
   const filteredApplications = sortedApplications.filter((app) => {
-    const applicantName =
-      app.formData?.name ||
-      app.formData?.fullname ||
-      app.userId?.name ||
-      "";
-    const service = app.serviceId?.name?.en || ""
-    console.log('---------------------', service)
-    const phone = app.formData?.mobileNumber || app.formData?.phone || "";
+    const applicantName = getApplicantName(app);
+    const phone = getApplicantPhone(app);
+    const service = app.serviceId?.name?.en || "";
     const idStr = `#${app._id?.slice(-8).toUpperCase() || ""}`;
     const normalizedSearch = normalizeSearch(searchTerm);
 
-    const matchesStatus =
-      statusFilter === "All Status" || app.status === statusFilter;
+    const matchesStatus = statusFilter === "All Status" || app.status === statusFilter;
 
     const matchesSearch =
       normalizedSearch === "" ||
@@ -250,15 +238,10 @@ export default function Applications() {
     return matchesStatus && matchesSearch;
   });
 
-  const totalPages = Math.ceil(
-    filteredApplications.length / applicationsPerPage,
-  );
+  const totalPages = Math.ceil(filteredApplications.length / applicationsPerPage);
   const indexOfLastApp = currentPage * applicationsPerPage;
   const indexOfFirstApp = indexOfLastApp - applicationsPerPage;
-  const paginatedApplications = filteredApplications.slice(
-    indexOfFirstApp,
-    indexOfLastApp,
-  );
+  const paginatedApplications = filteredApplications.slice(indexOfFirstApp, indexOfLastApp);
 
   const handlePageChange = (page) => {
     if (page < 1 || page > totalPages) return;
@@ -271,50 +254,26 @@ export default function Applications() {
       return;
     }
 
-    const headers = [
-      "Application ID",
-      "Applicant Name",
-      "Mobile Number",
-      "Service",
-      "Submitted On",
-      "Status",
-    ];
+    const headers = ["Application ID", "Applicant Name", "Mobile Number", "Service", "Submitted On", "Status"];
 
     const rows = filteredApplications.map((app) => {
-      const applicantName =
-        app.formData?.applicantName ||
-        app.formData?.fullName ||
-        app.userId?.name || "Unknown";
-      const phone = app.formData?.mobileNumber || app.formData?.phone || app.userId?.mobileNumber || "N/A";
+      const applicantName = getApplicantName(app);
+      const phone = getApplicantPhone(app);
       const service = app.serviceId?.name?.en || app.serviceId || "N/A";
       const submittedOn = new Date(app.createdAt).toLocaleDateString("en-IN");
 
-      return [
-        app._id,
-        applicantName,
-        phone,
-        service,
-        submittedOn,
-        app.status || "N/A",
-      ];
+      return [app._id, applicantName, phone, service, submittedOn, app.status || "N/A"];
     });
 
     const csvContent = [headers, ...rows]
-      .map((row) =>
-        row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(","),
-      )
+      .map((row) => row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(","))
       .join("\n");
 
-    const blob = new Blob(["\uFEFF" + csvContent], {
-      type: "text/csv;charset=utf-8;",
-    });
+    const blob = new Blob(["\uFEFF" + csvContent], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.setAttribute(
-      "download",
-      `applications_${new Date().toISOString().slice(0, 10)}.csv`,
-    );
+    link.setAttribute("download", `applications_${new Date().toISOString().slice(0, 10)}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -322,7 +281,6 @@ export default function Applications() {
   };
 
   const getPaymentBadge = (payment) => {
-
     switch (payment) {
       case "pending":
         return (
@@ -347,8 +305,6 @@ export default function Applications() {
     }
   };
 
-  const handleUpdateStatus = () => { };
-
   const getStatusBadge = (status) => {
     switch (status) {
       case "Pending":
@@ -363,10 +319,11 @@ export default function Applications() {
             Rejected
           </span>
         );
+      case "Completed":
       case "Approved":
         return (
           <span className="px-3.5 py-1 bg-[#DCFCE7] text-[#22C55E] rounded-full text-xs font-bold w-[90px] inline-flex justify-center">
-            Approved
+            Completed
           </span>
         );
       case "In Progress":
@@ -385,14 +342,8 @@ export default function Applications() {
   };
 
   const renderRow = (app, idx) => {
-    const applicantName =
-      app.formData?.applicantName ||
-      app.formData?.fullName ||
-      app.formData?.name ||
-      app.userId?.name ||
-      "Unknown";
-
-    const phone = app.formData?.mobileNumber || app.formData?.phone || app.formData?.mobile || app.userId?.mobileNumber || "N/A";
+    const applicantName = getApplicantName(app);
+    const phone = getApplicantPhone(app);
 
     return (
       <tr
@@ -403,10 +354,14 @@ export default function Applications() {
           {`#${app._id?.slice(-8).toUpperCase()}`}
         </td>
         <td className="px-6 py-4 font-bold flex items-center space-x-3 whitespace-nowrap">
-          {app?.userId?.profileImage ?
-            <div style={{ backgroundImage: `url(${app?.userId?.profileImage})` }} className="w-10 h-10 bg-[#041A40] bg-cover bg-center rounded-full flex items-center justify-center text-white font-bold text-sm shrink-0">
-            </div> :
-            <User className="w-8 h-8 sm:w-8 sm:h-8 text-blue-700  " />}
+          {app?.userId?.profileImage ? (
+            <div
+              style={{ backgroundImage: `url(${app?.userId?.profileImage})` }}
+              className="w-10 h-10 bg-[#041A40] bg-cover bg-center rounded-full flex items-center justify-center text-white font-bold text-sm shrink-0"
+            ></div>
+          ) : (
+            <User className="w-8 h-8 sm:w-8 sm:h-8 text-blue-700" />
+          )}
           <div>
             <div className="text-gray-900">{applicantName}</div>
             <div className="text-gray-400 font-normal text-xs">{phone}</div>
@@ -422,9 +377,7 @@ export default function Applications() {
             year: "numeric",
           })}
         </td>
-        <td className="px-6 py-4">
-          {getPaymentBadge(app?.paymentStatus || "pending")}
-        </td>
+        <td className="px-6 py-4">{getPaymentBadge(app?.paymentStatus || "pending")}</td>
         <td className="px-6 py-4">{getStatusBadge(app.status)}</td>
         <td className="px-6 py-4">
           <div className="flex items-center space-x-3">
@@ -432,22 +385,16 @@ export default function Applications() {
               onClick={() => navigate(`/requests/${app._id}`)}
               className="text-[#041A40] transition-transform hover:scale-110 focus:outline-none flex items-center justify-center w-6 h-6"
             >
-              <svg
-                viewBox="0 0 24 24"
-                fill="currentColor"
-                className="w-[18px] h-[18px]"
-              >
+              <svg viewBox="0 0 24 24" fill="currentColor" className="w-[18px] h-[18px]">
                 <path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z" />
               </svg>
             </button>
 
             {app.status === "Completed" ? (
-              <span className="px-3 py-1 bg-[#2e6943] text-white rounded-full text-xs font-bold whitespace-nowrap">
+              <span className="px-3 py-1 bg-[#DCFCE7] text-[#22C55E] rounded-full text-xs font-bold whitespace-nowrap">
                 Completed
               </span>
-            ) : app.status === "Rejected" ? null : app.status ===
-              "In Progress" ? (
-              // In Progress -> sirf Complete button, X hata diya
+            ) : app.status === "Rejected" ? null : app.status === "In Progress" ? (
               <button
                 onClick={() => handleStatusUpdate(app._id, "Completed")}
                 disabled={updatingId === app._id}
@@ -480,21 +427,8 @@ export default function Applications() {
   };
 
   const renderMobileCard = (app, idx) => {
-    const applicantName =
-      app.formData?.applicantName ||
-      app.formData?.headOfFamily ||
-      app.formData?.fullName ||
-      app.formData?.name ||
-      app.formData?.fullname ||
-      app.userId?.name ||
-      "Unknown";
-
-    const phone =
-      app.formData?.mobileNumber ||
-      app.formData?.phone ||
-      app.formData?.mobile ||
-      app.userId?.mobileNumber ||
-      "N/A";
+    const applicantName = getApplicantName(app);
+    const phone = getApplicantPhone(app);
 
     return (
       <div
@@ -503,16 +437,21 @@ export default function Applications() {
       >
         <div className="flex justify-between items-start gap-3">
           <div className="flex items-center space-x-3 min-w-0 flex-1">
-            <div className="w-10 h-10 bg-[#041A40] rounded-full flex items-center justify-center text-white font-bold text-sm shrink-0">
-              {applicantName.slice(0, 2).toUpperCase()}
-            </div>
+            {app?.userId?.profileImage ? (
+              <div
+                style={{ backgroundImage: `url(${app?.userId?.profileImage})` }}
+                className="w-10 h-10 bg-[#041A40] bg-cover bg-center rounded-full flex items-center justify-center text-white font-bold text-sm shrink-0"
+              ></div>
+            ) : (
+              <div className="w-10 h-10 bg-[#041A40] rounded-full flex items-center justify-center text-white font-bold text-sm shrink-0">
+                {applicantName.slice(0, 2).toUpperCase()}
+              </div>
+            )}
             <div className="min-w-0">
               <div className="text-gray-900 font-bold text-base leading-tight break-words">
                 {applicantName}
               </div>
-              <div className="text-gray-400 text-xs font-normal mt-0.5 break-words">
-                {phone}
-              </div>
+              <div className="text-gray-400 text-xs font-normal mt-0.5 break-words">{phone}</div>
             </div>
           </div>
           <div className="text-xs font-bold text-gray-500">
@@ -521,17 +460,15 @@ export default function Applications() {
         </div>
 
         <div>
-          <p className="text-[10px] uppercase tracking-wider text-gray-400 font-bold mb-1">
-            Service
-          </p>
+          <p className="text-[10px] uppercase tracking-wider text-gray-400 font-bold mb-1">Service</p>
           <div className="text-gray-700 text-sm font-bold">
             {app.serviceId?.name?.en || app.serviceId || "N/A"}
           </div>
         </div>
 
-        <div className="flex justify-between items-center bg-gray-50 p-3 rounded-xl border border-gray-100">
-          <div>
-            <p className="text-[10px] uppercase tracking-wider text-gray-400 font-bold mb-1">
+        <div className="flex flex-col gap-3 bg-gray-50 p-3 rounded-xl border border-gray-100">
+          <div className="flex justify-between items-center">
+            <p className="text-[10px] uppercase tracking-wider text-gray-400 font-bold">
               Submitted On
             </p>
             <p className="text-gray-800 text-sm font-bold">
@@ -542,9 +479,17 @@ export default function Applications() {
               })}
             </p>
           </div>
-          <div className="flex flex-col items-end space-y-2">
-            {getPaymentBadge(app?.paymentStatus || "Pending")}
-            {getStatusBadge(app.status)}
+          <div className="flex justify-between items-center">
+            <p className="text-[10px] uppercase tracking-wider text-gray-400 font-bold">
+              Payment Status
+            </p>
+            <div>{getPaymentBadge(app?.paymentStatus || "pending")}</div>
+          </div>
+          <div className="flex justify-between items-center">
+            <p className="text-[10px] uppercase tracking-wider text-gray-400 font-bold">
+              Application Status
+            </p>
+            <div>{getStatusBadge(app.status)}</div>
           </div>
         </div>
 
@@ -562,8 +507,7 @@ export default function Applications() {
             <span className="px-3.5 py-1.5 bg-[#DCFCE7] text-[#22C55E] rounded-full text-xs font-bold whitespace-nowrap">
               Completed
             </span>
-          ) : app.status === "Rejected" ? null : app.status ===
-            "In Progress" ? (
+          ) : app.status === "Rejected" ? null : app.status === "In Progress" ? (
             <button
               onClick={() => handleStatusUpdate(app._id, "Completed")}
               disabled={updatingId === app._id}
@@ -595,21 +539,12 @@ export default function Applications() {
   };
 
   return (
-    <div className="w-auto lg:-mx-4 xl:-mx-8 space-y-6">
+    <div className="w-auto lg:-mx-4 xl:-mx-8 space-y-8">
       {/* Header Section */}
-      <div className="flex items-start justify-between flex-wrap gap-3">
-        <div>
-          <div className="flex items-center gap-3">
-            <h1 className="text-3xl font-bold text-[#041A40]">Applications</h1>
-          </div>
-          <p className="text-gray-600 font-bold text-sm mt-1">
-            Review, verify and process citizen service applications.
-          </p>
-        </div>
-      </div>
+
 
       {/* Stat Cards & Actions */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5  gap-2">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
         {isLoading ? (
           <>
             <SkeletonStatCard />
@@ -627,41 +562,33 @@ export default function Applications() {
               value={applications.length}
               icon={FileText}
               iconBgColor="bg-[#FF8303]"
-              trend="+30%"
-              trendText="Increased than yesterday"
+              trend={allTrend.trend}
+              trendText={allTrend.trendText}
             />
             <StatCard
               title="Pending Applications"
               value={pendingCount}
               icon={Clock}
               iconBgColor="bg-[#FACC15]"
-              trend="+30%"
-              trendText="Increased than yesterday"
+              trend={null}
+              trendText=""
             />
             <StatCard
               title="Approved Applications"
               value={approvedCount}
               icon={CheckCircle2}
               iconBgColor="bg-[#22C55E]"
-              trend="+30%"
-              trendText="Increased than yesterday"
+              trend={null}
+              trendText=""
             />
             <StatCard
               title="Rejected Applications"
               value={rejectedCount}
               icon={XCircle}
               iconBgColor="bg-[#EF4444]"
-              trend="+30%"
-              trendText="Increased than yesterday"
+              trend={null}
+              trendText=""
             />
-            {/* <StatCard
-              title="Completed Applications"
-              value={completedCound}
-              icon={FaFileCircleCheck}
-              iconBgColor="bg-[#FF8303]"
-              trend="+30%"
-              trendText="Increased than yesterday"
-            /> */}
             <div className="flex justify-end items-end h-full">
               <Button icon={Download} onClick={handleExport}>
                 Export
@@ -672,17 +599,21 @@ export default function Applications() {
       </div>
 
       {/* Table Section */}
-      <div
-        className="rounded-3xl p-6 shadow-sm border border-slate-100"
-        style={{ backgroundColor: "#D9D9D938" }}
-      >
+      <div className="bg-white rounded-[20px] p-6 shadow-sm border border-slate-100">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 space-y-4 md:space-y-0">
-          <h2 className="text-xl font-bold text-[#041A40]">All Applications</h2>
-
+          <div>
+            <h2 className="text-xl font-bold text-[#041A40]">All Applications</h2>
+            <p className="text-gray-600 font-bold text-sm mt-1">
+              Review, verify and process citizen service applications.
+            </p>
+          </div>
           <div className="flex flex-col sm:flex-row items-center space-y-3 sm:space-y-0 sm:space-x-2 w-full md:w-auto">
             <select
               value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
+              onChange={(e) => {
+                setStatusFilter(e.target.value);
+                setCurrentPage(1);
+              }}
               className="w-full sm:w-auto px-4 py-2 text-sm font-bold text-gray-700 bg-white border border-gray-200 rounded-full focus:outline-none focus:ring-2 focus:ring-[#FF8303]/20 appearance-none pr-8 bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20width%3D%2212%22%20height%3D%228%22%20viewBox%3D%220%200%2012%208%20%22%20fill%3D%22none%22%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%3E%3Cpath%20d%3D%22M1%201.5L6%206.5L11%201.5%22%20stroke%3D%22%23666666%22%20stroke-width%3D%221.5%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22/%3E%3C/svg%3E')] bg-[length:12px_8px] bg-no-repeat bg-[position:calc(100%-1rem)_center]"
             >
               <option>All Status</option>
@@ -723,16 +654,8 @@ export default function Applications() {
                 className="px-4 py-2 rounded-full text-sm font-bold transition-all border"
                 style={
                   isActive
-                    ? {
-                      backgroundColor: tab.bg,
-                      color: tab.color,
-                      borderColor: tab.color,
-                    }
-                    : {
-                      backgroundColor: "white",
-                      color: "#6B7280",
-                      borderColor: "#E5E7EB",
-                    }
+                    ? { backgroundColor: tab.bg, color: tab.color, borderColor: tab.color }
+                    : { backgroundColor: "white", color: "#6B7280", borderColor: "#E5E7EB" }
                 }
               >
                 {tab.label} ({tab.count})
@@ -755,8 +678,7 @@ export default function Applications() {
           <div className="flex flex-col sm:flex-row justify-between items-center mt-6 space-y-4 sm:space-y-0">
             <p className="text-sm text-gray-500 font-bold">
               Showing {indexOfFirstApp + 1}-
-              {Math.min(indexOfLastApp, filteredApplications.length)} of{" "}
-              {filteredApplications.length} applications
+              {Math.min(indexOfLastApp, filteredApplications.length)} of {filteredApplications.length} applications
             </p>
 
             <div className="flex items-center space-x-2">
@@ -768,20 +690,18 @@ export default function Applications() {
                 Prev
               </button>
 
-              {Array.from({ length: totalPages }, (_, i) => i + 1).map(
-                (page) => (
-                  <button
-                    key={page}
-                    onClick={() => handlePageChange(page)}
-                    className={`px-3 py-1.5 rounded-lg text-sm font-bold ${currentPage === page
-                      ? "bg-[#FF8303] text-white"
-                      : "border border-gray-200 text-[#041A40] hover:bg-gray-100"
-                      }`}
-                  >
-                    {page}
-                  </button>
-                ),
-              )}
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                <button
+                  key={page}
+                  onClick={() => handlePageChange(page)}
+                  className={`px-3 py-1.5 rounded-lg text-sm font-bold ${currentPage === page
+                    ? "bg-[#FF8303] text-white"
+                    : "border border-gray-200 text-[#041A40] hover:bg-gray-100"
+                    }`}
+                >
+                  {page}
+                </button>
+              ))}
 
               <button
                 onClick={() => handlePageChange(currentPage + 1)}

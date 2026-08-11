@@ -159,11 +159,11 @@ export default function Services() {
             return (
               <div
                 key={id}
-                className={`bg-[#D9D9D938] rounded-[20px] p-5 border border-gray-100 transition-colors shadow-sm flex flex-col`}
+                className={`bg-white rounded-[20px] p-5 border border-gray-100 shadow-sm hover:shadow-md hover:border-[#FF8303]/30 hover:-translate-y-1 transition-all duration-300 flex flex-col group relative`}
               >
                 {/* Top row */}
                 <div className="flex justify-between items-start mb-4">
-                  <div className="w-12 h-12 bg-[#FF8303] rounded-full flex items-center justify-center text-white shrink-0 shadow-sm">
+                  <div className="w-12 h-12 bg-orange-50 group-hover:bg-[#FF8303] rounded-full flex items-center justify-center text-[#FF8303] group-hover:text-white shrink-0 shadow-sm transition-colors duration-300">
                     <FileText className="w-6 h-6" />
                   </div>
                   <div className="flex items-center space-x-3 mt-1">
@@ -223,7 +223,7 @@ export default function Services() {
                 {/* Fees and Time */}
                 <div className="grid grid-cols-2 gap-3 mb-5">
                   {/* Fees Card */}
-                  <div className="border border-[#F6D1A8] rounded-xl px-3 py-2 bg-white">
+                  <div className="border border-[#F6D1A8] group-hover:border-[#FF8303]/50 transition-colors duration-300 rounded-xl px-3 py-2 bg-white">
                     <p className="text-[11px] text-gray-400 font-medium mb-1">
                       Fees
                     </p>
@@ -231,7 +231,7 @@ export default function Services() {
                   </div>
 
                   {/* Time Card */}
-                  <div className="border border-[#F6D1A8] rounded-xl px-3 py-2 bg-white">
+                  <div className="border border-[#F6D1A8] group-hover:border-[#FF8303]/50 transition-colors duration-300 rounded-xl px-3 py-2 bg-white">
                     <p className="text-[11px] text-gray-400 font-medium mb-1">
                       Time
                     </p>
@@ -249,7 +249,7 @@ export default function Services() {
                       docs.map((doc, i) => (
                         <span
                           key={i}
-                          className="px-3 py-1 bg-white border border-gray-200 rounded-full text-[11px] font-bold text-gray-600 shadow-sm"
+                          className="px-3 py-1 bg-gray-50 border border-gray-200 group-hover:border-gray-300 transition-colors duration-300 rounded-full text-[11px] font-bold text-gray-600 shadow-sm"
                         >
                           {doc.fieldKey || `Document ${i + 1}`}
                         </span>
