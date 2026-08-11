@@ -63,7 +63,7 @@ export default function Navbar({ onLogoClick }) {
           </button>
 
           <button
-            onClick={() => setIsModalOpen(true)}
+            onClick={() => navigate("/add-service")}
             className="bg-[#FF8303] hover:bg-[#e67400] text-white 
             w-12 h-12 md:w-auto md:h-auto
             md:px-5 md:py-2 
