@@ -34,6 +34,7 @@ export default function Users() {
   const [userTab, setUserTab] = useState("All");
   const [currentPage, setCurrentPage] = useState(1);
   const usersPerPage = 5;
+  const showStatusColumn = userTab !== "Deleted";
 
   useEffect(() => {
     refetch();
@@ -48,10 +49,10 @@ export default function Users() {
 
   const tabFilteredUsers = useMemo(() => {
     switch (userTab) {
-      case "Active":  return sortedUsers.filter((u) => !u.isDeleted && !u.isBlock);
+      case "Active": return sortedUsers.filter((u) => !u.isDeleted && !u.isBlock);
       case "Blocked": return sortedUsers.filter((u) => !u.isDeleted && u.isBlock);
       case "Deleted": return sortedUsers.filter((u) => u.isDeleted);
-      default:        return sortedUsers.filter((u) => !u.isDeleted); // "All" hides deleted
+      default: return sortedUsers.filter((u) => !u.isDeleted); // "All" hides deleted
     }
   }, [sortedUsers, userTab]);
 
@@ -74,15 +75,26 @@ export default function Users() {
     if (currentPage > totalPages) setCurrentPage(totalPages);
   }, [currentPage, totalPages]);
 
-  const handleDeleteUser = async (id) => {
-    if (!window.confirm("Are you sure you want to delete this user?")) return;
+  const handleDeleteUser = async (id, isDeleted = false) => {
+    const confirmationMessage = isDeleted
+      ? "Are you sure you want to restore this user?"
+      : "Are you sure you want to delete this user?";
+
+    if (!window.confirm(confirmationMessage)) return;
+
     try {
       setDeletingId(id);
       const res = await userDelete(id).unwrap();
-      toast.success(res.message || "User deleted successfully");
+      toast.success(res.message || (isDeleted ? "User restored successfully" : "User deleted successfully"));
+
+      if (isDeleted && userTab === "Deleted") {
+        setUserTab("Active");
+        setCurrentPage(1);
+      }
+
       refetch();
     } catch (err) {
-      toast.error(err?.data?.message || "Failed to delete user");
+      toast.error(err?.data?.message || `Failed to ${isDeleted ? "restore" : "delete"} user`);
     } finally {
       setDeletingId(null);
     }
@@ -130,7 +142,9 @@ export default function Users() {
     });
   };
 
-  const columns = ["User Name", "Address", "Joined On", "Applications", "Status", "Actions"];
+  const columns = showStatusColumn
+    ? ["User Name", "Address", "Joined On", "Applications", "Status", "Actions"]
+    : ["User Name", "Address", "Joined On", "Applications", "Actions"];
 
   const renderRow = (user, idx) => {
     const id = user._id || user.id;
@@ -146,8 +160,6 @@ export default function Users() {
     const address2 = [user.taluka, user.district].filter(Boolean).join(", ");
     const isRowBlocking = blockingId === id;
     const isRowDeleting = deletingId === id;
-
-    // Deleted tab shows deleted users with a visual indicator — don't skip
 
     return (
       <tr
@@ -173,19 +185,21 @@ export default function Users() {
             {applications}
           </span>
         </td>
-        <td className="px-6 py-4">
-          <button
-            onClick={() => handleUserBlock(id)}
-            disabled={isRowBlocking}
-            className={`w-12 h-6 rounded-full relative transition-colors duration-200 focus:outline-none border-2 ${isActive ? "bg-[#FF8303] border-[#FF8303]" : "bg-gray-100 border-gray-300"} ${isRowBlocking ? "opacity-75 cursor-not-allowed" : ""}`}
-          >
-            <span
-              className={`absolute top-[2px] left-[2px] w-4 h-4 rounded-full transition-transform duration-200 flex items-center justify-center ${isActive ? "bg-white translate-x-6 text-[#FF8303]" : "bg-gray-400 translate-x-0 text-white"}`}
+        {showStatusColumn && (
+          <td className="px-6 py-4">
+            <button
+              onClick={() => handleUserBlock(id)}
+              disabled={isRowBlocking}
+              className={`w-12 h-6 rounded-full relative transition-colors duration-200 focus:outline-none border-2 ${isActive ? "bg-[#FF8303] border-[#FF8303]" : "bg-gray-100 border-gray-300"} ${isRowBlocking ? "opacity-75 cursor-not-allowed" : ""}`}
             >
-              {isRowBlocking && <Loader2 className="w-2.5 h-2.5 animate-spin" />}
-            </span>
-          </button>
-        </td>
+              <span
+                className={`absolute top-[2px] left-[2px] w-4 h-4 rounded-full transition-transform duration-200 flex items-center justify-center ${isActive ? "bg-white translate-x-6 text-[#FF8303]" : "bg-gray-400 translate-x-0 text-white"}`}
+              >
+                {isRowBlocking && <Loader2 className="w-2.5 h-2.5 animate-spin" />}
+              </span>
+            </button>
+          </td>
+        )}
         <td className="px-6 py-4">
           <div className="flex items-center space-x-4">
             <button
@@ -195,11 +209,17 @@ export default function Users() {
               View
             </button>
             <button
-              onClick={() => handleDeleteUser(id)}
+              onClick={() => handleDeleteUser(id, isDeleted)}
               disabled={isRowDeleting}
-              className="text-red-600 transition-transform hover:scale-110 focus:outline-none disabled:opacity-50"
+              className={`${isDeleted ? "text-green-600" : "text-red-600"} transition-transform hover:scale-110 focus:outline-none disabled:opacity-50`}
             >
-              {isRowDeleting ? <Loader2 className="w-[18px] h-[18px] animate-spin text-red-600" /> : "Delete"}
+              {isRowDeleting ? (
+                <Loader2 className="w-[18px] h-[18px] animate-spin text-current" />
+              ) : isDeleted ? (
+                <span className="text-green-500">Restore</span>
+              ) : (
+                <span className="text-red-500">Delete</span>
+              )}
             </button>
           </div>
         </td>
@@ -216,6 +236,7 @@ export default function Users() {
     const joinedOn = formatDate(user.createdAt || user.joinedOn);
     const applications = user.applicationCount || 0;
     const isActive = !user.isBlock;
+    const isDeleted = user.isDeleted;
     const address1 = user.addressLine1 || user.address || "Not Provided";
     const address2 = user.addressLine2 || "";
     const isRowBlocking = blockingId === id;
@@ -263,27 +284,31 @@ export default function Users() {
         <div className="flex items-center justify-end space-x-6 pt-3 border-t border-gray-100">
           <button onClick={() => navigate(`/users/${id}`)} className="text-[#041A40]">View</button>
           <button
-            onClick={() => handleDeleteUser(id)}
+            onClick={() => handleDeleteUser(id, isDeleted)}
             disabled={isRowDeleting}
-            className="text-red-600 disabled:opacity-50"
+            className={`${isDeleted ? "text-green-600" : "text-red-600"} disabled:opacity-50`}
           >
-            {isRowDeleting ? <Loader2 className="w-5 h-5 animate-spin text-red-600" /> : "Delete"}
+            {isRowDeleting ? (
+              <Loader2 className="w-5 h-5 animate-spin text-current" />
+            ) : (
+              isDeleted ? "Restore" : "Delete"
+            )}
           </button>
         </div>
       </div>
     );
   };
 
-  const totalUsersCount   = users.filter((u) => !u.isDeleted).length;
-  const activeUsersCount  = users.filter((u) => !u.isDeleted && !u.isBlock).length;
-  const totalUserBlockCount  = users.filter((u) => u.isBlock === true && !u.isDeleted).length;
+  const totalUsersCount = users.filter((u) => !u.isDeleted).length;
+  const activeUsersCount = users.filter((u) => !u.isDeleted && !u.isBlock).length;
+  const totalUserBlockCount = users.filter((u) => u.isBlock === true && !u.isDeleted).length;
   const totalUserDeleteCount = users.filter((u) => u.isDeleted === true).length;
 
   const userTabs = [
-    { label: "All Users", value: "All",     count: totalUsersCount,      color: "#041A40", bg: "#E1F5FE" },
-    { label: "Active",    value: "Active",  count: activeUsersCount,     color: "#16A34A", bg: "#DCFCE7" },
-    { label: "Blocked",   value: "Blocked", count: totalUserBlockCount,  color: "#EF4444", bg: "#FEE2E2" },
-    { label: "Deleted",   value: "Deleted", count: totalUserDeleteCount, color: "#6B7280", bg: "#F3F4F6" },
+    { label: "All Users", value: "All", count: totalUsersCount, color: "#041A40", bg: "#E1F5FE" },
+    { label: "Active", value: "Active", count: activeUsersCount, color: "#16A34A", bg: "#DCFCE7" },
+    { label: "Blocked", value: "Blocked", count: totalUserBlockCount, color: "#EF4444", bg: "#FEE2E2" },
+    { label: "Deleted", value: "Deleted", count: totalUserDeleteCount, color: "#6B7280", bg: "#F3F4F6" },
   ];
 
   return (
@@ -419,11 +444,10 @@ export default function Users() {
                     <button
                       key={item}
                       onClick={() => setCurrentPage(item)}
-                      className={`w-9 h-9 rounded-full text-sm font-bold transition-colors border ${
-                        currentPage === item
-                          ? "bg-[#FF8303] text-white border-[#FF8303] shadow-sm"
-                          : "bg-white text-gray-600 border-gray-200 hover:border-[#FF8303] hover:text-[#FF8303]"
-                      }`}
+                      className={`w-9 h-9 rounded-full text-sm font-bold transition-colors border ${currentPage === item
+                        ? "bg-[#FF8303] text-white border-[#FF8303] shadow-sm"
+                        : "bg-white text-gray-600 border-gray-200 hover:border-[#FF8303] hover:text-[#FF8303]"
+                        }`}
                     >
                       {item}
                     </button>
