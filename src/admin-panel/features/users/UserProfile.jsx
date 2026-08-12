@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import {
   ArrowLeft,
@@ -6,8 +6,6 @@ import {
   CheckCircle2,
   XCircle,
   Briefcase,
-  Info,
-  CreditCard,
   Download,
 } from "lucide-react";
 import StatCard from "../../../shared/components/StatCard";
@@ -22,23 +20,17 @@ import { exportUserReport } from "../../../utils/exportPDf";
 
 export default function UserProfile() {
   const navigate = useNavigate();
-  const { id } = useParams(); // Could be used to fetch actual user data
+  const { id } = useParams();
 
   const { data: userDetails, isLoading } = useGetUserByIdQuery(id);
   const [userBlock, { isLoading: isBlocking }] = useUserBlockMutation();
 
   const user = userDetails?.user;
   const applications = userDetails?.appilications || [];
-
-  // console.log("User Details:", userDetails);
-
-  const isActive = !user?.isBlock;
-
   const [activeTab, setActiveTab] = useState("Personal Info");
 
   const formatDate = (date) => {
     if (!date) return "N/A";
-
     return new Date(date).toLocaleDateString("en-GB", {
       day: "2-digit",
       month: "short",
@@ -46,95 +38,77 @@ export default function UserProfile() {
     });
   };
 
-  const handleUserBlock = async () => {
-    try {
-      const res = await userBlock(user._id).unwrap();
-      console.log(res);
+  const formatCurrency = (value) =>
+    new Intl.NumberFormat("en-IN", {
+      style: "currency",
+      currency: "INR",
+      maximumFractionDigits: 0,
+    }).format(Number(value || 0));
 
-      // Agar react-hot-toast use kar rahi ho
-      // toast.success(res.message);
+  const handleUserBlock = async () => {
+    if (!user?._id) return;
+    try {
+      await userBlock(user._id).unwrap();
     } catch (err) {
       console.error(err);
-      // toast.error(err?.data?.message || "Something went wrong");
     }
   };
 
- const handleWhatsAppClick = () => {
-  if (!user?.mobileNumber) return;
+  const handleWhatsAppClick = () => {
+    if (!user?.mobileNumber) return;
 
-  // Number ko clean karo — sirf digits rakho
-  let number = String(user.mobileNumber).replace(/\D/g, "");
+    let number = String(user.mobileNumber).replace(/\D/g, "");
+    if (number.length === 10) number = `91${number}`;
 
-  // Agar number me already country code nahi hai (10 digit hai), 91 add karo
-  if (number.length === 10) {
-    number = `91${number}`;
-  }
-
-  const whatsappUrl = `https://wa.me/${number}`;
-
-  window.open(whatsappUrl, "_blank", "noopener,noreferrer");
-};
-
-  const payments = [
-    {
-      id: "TXN-1234567",
-      service: "Aadhaar card update",
-      method: "UPI",
-      payment: "Success",
-      date: "12/05/2026",
-      amount: "₹199",
-    },
-    {
-      id: "TXN-1234567",
-      service: "Aadhaar card update",
-      method: "UPI",
-      payment: "Success",
-      date: "12/05/2026",
-      amount: "₹199",
-    },
-    {
-      id: "TXN-1234567",
-      service: "Aadhaar card update",
-      method: "UPI",
-      payment: "Success",
-      date: "12/05/2026",
-      amount: "₹199",
-    },
-    {
-      id: "TXN-1234567",
-      service: "Aadhaar card update",
-      method: "UPI",
-      payment: "Success",
-      date: "12/05/2026",
-      amount: "₹199",
-    },
-  ];
-
-  const handleExport = () => {
-    exportUserReport(user, applications, payments);
+    window.open(`https://wa.me/${number}`, "_blank", "noopener,noreferrer");
   };
 
-  const totalApplications = applications.length;
+  const normalizedApplications = useMemo(() => {
+    return applications.map((app) => {
+      const shortId = app?._id?.slice(-8)?.toUpperCase() || "";
+      const serviceName =
+        app?.serviceId?.name?.en ||
+        app?.serviceId?.name?.hi ||
+        app?.serviceId?.name?.mr ||
+        app?.serviceId?.name ||
+        "N/A";
 
-  const approvedApplications = applications.filter(
-    (app) => app.status === "Approved",
+      return {
+        id: app?._id || "N/A",
+        applicationId: `#${shortId}`,
+        transactionId: `TXN-${shortId}`,
+        service: serviceName,
+        submitted: formatDate(app?.createdAt),
+        paymentStatus: app?.paymentStatus || "pending",
+        status: app?.status || "Pending",
+        amountValue: app?.serviceId?.price || 0,
+        amount: formatCurrency(app?.serviceId?.price || 0),
+        method: app?.PaymentImage ? "Screenshot" : "N/A",
+      };
+    });
+  }, [applications]);
+
+  const totalApplications = normalizedApplications.length;
+  const approvedApplications = normalizedApplications.filter(
+    (app) => app.status === "Completed",
   ).length;
-
-  const rejectedApplications = applications.filter(
+  const rejectedApplications = normalizedApplications.filter(
     (app) => app.status === "Rejected",
   ).length;
+  const totalRevenue = normalizedApplications
+    .filter((payment) => payment.paymentStatus === "approved")
+    .reduce((total, payment) => total + Number(payment.amountValue || 0), 0);
 
-  const totalRevenue = payments
-    .filter((payment) => payment.payment === "Success")
-    .reduce(
-      (total, payment) =>
-        total + Number(String(payment.amount).replace(/[₹,]/g, "")),
-      0,
-    );
+  const handleExport = () => {
+    exportUserReport(user, applications, normalizedApplications);
+  };
+
+  if (isLoading) {
+    return <div className="py-10 text-center text-gray-500">Loading...</div>;
+  }
 
   return (
     <div className="w-auto lg:-mx-4 xl:-mx-8 space-y-6">
-      {/* Header Area */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center space-y-4 md:space-y-0">
         <div className="flex items-center space-x-4">
           <button
@@ -149,36 +123,31 @@ export default function UserProfile() {
             </h1>
             <p className="text-gray-600 font-bold text-xs md:text-sm uppercase tracking-wide">
               USER-{user?._id?.slice(-8).toUpperCase()}{" "}
-              <span className="mx-1">|</span> Joined on{" "}
-              {formatDate(user?.createdAt)} <span className="mx-1">|</span>{" "}
-              {user?.mobileNumber || "N/A"}
+              <span className="mx-1">|</span> Joined on {formatDate(user?.createdAt)}{" "}
+              <span className="mx-1">|</span> {user?.mobileNumber || "N/A"}
             </p>
           </div>
         </div>
 
-        {/* Right Actions */}
         <div className="flex items-center space-x-4">
-          {/* Status Toggle */}
-
           <button
             onClick={handleUserBlock}
             disabled={isBlocking}
             className={`w-12 h-6 shrink-0 rounded-full relative transition-colors duration-200 border-2 ${
-              isActive
+              !user?.isBlock
                 ? "bg-[#041A40] border-[#041A40]"
                 : "bg-gray-100 border-gray-300"
             } ${isBlocking ? "opacity-50 cursor-not-allowed" : ""}`}
           >
             <span
               className={`absolute top-[2px] left-[2px] w-4 h-4 rounded-full transition-transform duration-200 ${
-                isActive
+                !user?.isBlock
                   ? "bg-white translate-x-6"
                   : "bg-gray-400 translate-x-0"
               }`}
             />
           </button>
-          {/* WhatsApp Button */}
-          {/* WhatsApp Button */}
+
           <button
             onClick={handleWhatsAppClick}
             disabled={!user?.mobileNumber}
@@ -190,7 +159,7 @@ export default function UserProfile() {
               className="w-10 h-10 object-contain"
             />
           </button>
-          {/* Export Button */}
+
           <button
             className="flex items-center space-x-2 bg-[#FF8303] hover:bg-[#e67400] text-white px-5 py-2.5 rounded-full font-bold shadow-sm shadow-orange-500/20 transition-all active:scale-95"
             onClick={handleExport}
@@ -201,7 +170,6 @@ export default function UserProfile() {
         </div>
       </div>
 
-      {/* Stat Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
           title="Total Applications"
@@ -209,7 +177,7 @@ export default function UserProfile() {
           icon={FileText}
           iconBgColor="bg-[#FF8303]"
           trend="+30%"
-          trendText="Increased than last month"
+          trendText="Submitted by this user"
         />
         <StatCard
           title="Approved Applications"
@@ -217,7 +185,7 @@ export default function UserProfile() {
           icon={CheckCircle2}
           iconBgColor="bg-[#00A3FF]"
           trend="+30%"
-          trendText="Increased than yesterday"
+          trendText="Completed applications"
         />
         <StatCard
           title="Rejected Applications"
@@ -225,20 +193,19 @@ export default function UserProfile() {
           icon={XCircle}
           iconBgColor="bg-red-500"
           trend="+30%"
-          trendText="Increased than yesterday"
+          trendText="Rejected applications"
         />
         <StatCard
           title="Total Revenue"
-          value={`₹${totalRevenue}`}
+          value={formatCurrency(totalRevenue)}
           icon={Briefcase}
           iconBgColor="bg-[#041A40]"
           trend="+30%"
-          trendText="Increased than yesterday"
+          trendText="Approved payment total"
           isCurrency={false}
         />
       </div>
 
-      {/* Tabs Navigation */}
       <div className="bg-[#f8f9fa] border border-gray-100 rounded-xl p-2 flex items-center space-x-6 overflow-x-auto mb-2 px-6">
         <button
           onClick={() => setActiveTab("Personal Info")}
@@ -285,13 +252,12 @@ export default function UserProfile() {
         </button>
       </div>
 
-      {/* Form Content Area */}
       <div className="bg-white rounded-2xl p-6 sm:p-8 border border-gray-100 shadow-sm">
         {activeTab === "Personal Info" && <PersonalInfo user={user} />}
         {activeTab === "Applications" && (
-          <Applications applications={applications} />
+          <Applications applications={normalizedApplications} />
         )}
-        {activeTab === "Payments" && <Payments payments={payments} />}
+        {activeTab === "Payments" && <Payments payments={normalizedApplications} />}
       </div>
     </div>
   );

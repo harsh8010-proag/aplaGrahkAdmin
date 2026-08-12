@@ -1,7 +1,10 @@
 import React, { useState, useMemo } from "react";
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+
 import {
+
+
   CreditCard,
   XCircle,
   Download,
@@ -12,6 +15,7 @@ import {
   ChevronLeft,
   ChevronRight,
   RefreshCw,
+  ExternalLink,
 } from "lucide-react";
 import StatCard from "../../../shared/components/StatCard";
 import Button from "../../../shared/components/Button";
@@ -66,6 +70,33 @@ export default function Payments() {
   const [currentPage, setCurrentPage] = useState(1);
   const [activeFilter, setActiveFilter] = useState("All"); // "All" | "Success" | "Failed"
   const [searchTerm, setSearchTerm] = useState("");
+  const [previewDoc, setPreviewDoc] = useState(null);
+
+  const handleDownload = async (url, fileName) => {
+    try {
+      const response = await fetch(url);
+      const contentType = response.headers.get("content-type");
+      const blob = await response.blob();
+      const extension =
+        contentType === "application/pdf"
+          ? "pdf"
+          : contentType === "image/png"
+            ? "png"
+            : contentType === "image/jpeg"
+              ? "jpg"
+              : "";
+      const downloadUrl = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = downloadUrl;
+      link.download = `${fileName}.${extension}`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(downloadUrl);
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
   useEffect(() => {
     refetch();
@@ -261,11 +292,9 @@ export default function Payments() {
     const isPdf = txn.screenshot.toLowerCase().endsWith(".pdf");
 
     return (
-      <a
-        href={txn.screenshot}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="flex items-center gap-2 text-[#FF8303] font-bold text-xs hover:underline w-fit"
+      <button
+        onClick={() => setPreviewDoc(txn.screenshot)}
+        className="flex items-center gap-2 text-[#FF8303] font-bold text-xs hover:underline w-fit focus:outline-none"
       >
         {isPdf ? (
           <span className="w-9 h-9 rounded-lg bg-gray-100 border border-gray-200 flex items-center justify-center shrink-0">
@@ -279,8 +308,7 @@ export default function Payments() {
           />
         )}
         <Eye size={14} />
-
-      </a>
+      </button>
     );
   };
 
@@ -642,6 +670,76 @@ export default function Payments() {
           </>
         )}
       </div>
+
+      {/* Payment Screenshot Preview Modal */}
+      {previewDoc && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="bg-white rounded-[20px] max-w-5xl w-full flex flex-col max-h-[95vh] shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+            {/* Modal Header */}
+            <div className="flex justify-between items-center p-4 border-b border-gray-100">
+              <div>
+                <h3 className="text-base font-bold text-[#041A40]">
+                  Payment Screenshot Preview
+                </h3>
+              </div>
+              <button
+                onClick={() => setPreviewDoc(null)}
+                className="w-7 h-7 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition-colors text-gray-500 focus:outline-none"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Modal Content / Preview Area */}
+            <div className="flex-1 bg-gray-50 p-4 overflow-y-auto flex items-center justify-center min-h-[400px]">
+              {previewDoc.toLowerCase().endsWith(".pdf") || previewDoc.includes(".pdf") ? (
+                <iframe
+                  src={`${previewDoc}#toolbar=0`}
+                  title="Payment Screenshot"
+                  className="w-full h-[65vh] border border-gray-200 rounded-xl"
+                />
+              ) : (
+                <img
+                  src={previewDoc}
+                  alt="Payment Screenshot"
+                  className="max-h-[65vh] object-contain rounded-xl shadow-sm"
+                />
+              )}
+            </div>
+
+            {/* Modal Footer */}
+            <div className="p-4 border-t border-gray-100 flex justify-end items-center space-x-2">
+              <button
+                onClick={() => setPreviewDoc(null)}
+                className="px-3 py-1.5 rounded-lg border border-gray-200 hover:bg-gray-50 text-gray-700 text-xs font-bold transition-all focus:outline-none"
+              >
+                Close
+              </button>
+
+              <a
+                href={previewDoc}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-gray-200 hover:bg-gray-50 text-gray-700 text-xs font-bold transition-all focus:outline-none"
+              >
+                <ExternalLink className="w-3.5 h-3.5" />
+                Open in New Tab
+              </a>
+
+              <button
+                onClick={() => {
+                  handleDownload(previewDoc, "PaymentScreenshot");
+                  setPreviewDoc(null);
+                }}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#041A40] hover:bg-[#082962] text-white text-xs font-bold transition-all focus:outline-none"
+              >
+                <Download className="w-3.5 h-3.5" />
+                Download
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

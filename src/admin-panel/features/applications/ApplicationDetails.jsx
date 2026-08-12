@@ -10,6 +10,7 @@ import {
   X,
   Phone,
   MapPin,
+  ExternalLink,
 } from "lucide-react";
 import {
   useGetApplicationByIdQuery,
@@ -39,6 +40,7 @@ export default function ApplicationDetails() {
   const [activeTab, setActiveTab] = useState("personal");
   const [updatingId, setUpdatingId] = useState(null);
   const [chatMessage, setChatMessage] = useState("");
+  const [previewDoc, setPreviewDoc] = useState(null);
 
   const ADMIN_WHATSAPP_NUMBER = "917769914777"; // fixed admin WhatsApp number
 
@@ -123,7 +125,93 @@ export default function ApplicationDetails() {
 
   if (isLoading) {
     return (
-      <div className="p-10 text-center text-gray-500 font-bold">Loading...</div>
+      <div className="w-auto lg:-mx-4 xl:-mx-8 space-y-6 animate-pulse p-6">
+        {/* Top Header Row Skeleton */}
+        <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center mb-6 space-y-4 xl:space-y-0">
+          <div className="flex items-center space-x-4 w-full xl:w-auto">
+            <div className="w-10 h-10 bg-gray-200 rounded-full shrink-0"></div>
+            <div className="space-y-2 w-48">
+              <div className="h-6 bg-gray-200 rounded w-3/4"></div>
+              <div className="h-4 bg-gray-200 rounded w-5/6"></div>
+            </div>
+          </div>
+          <div className="flex items-center space-x-3 w-full xl:w-auto justify-end">
+            <div className="w-10 h-10 bg-gray-200 rounded-full shrink-0"></div>
+            <div className="w-32 h-10 bg-gray-200 rounded-xl"></div>
+          </div>
+        </div>
+
+        <div className="flex flex-col xl:flex-row gap-6">
+          {/* Left Main Content Skeleton */}
+          <div className="flex-1 space-y-6">
+            {/* Tabs Skeleton */}
+            <div className="flex flex-wrap items-center px-4 py-2 bg-[#F8F9FA] border border-gray-100 rounded-2xl w-full space-x-4">
+              <div className="w-24 h-8 bg-gray-200 rounded-full"></div>
+              <div className="w-24 h-8 bg-gray-200 rounded-full"></div>
+              <div className="w-24 h-8 bg-gray-200 rounded-full"></div>
+            </div>
+
+            {/* Tab Content Skeleton (Card) */}
+            <div className="p-6 border border-gray-200 rounded-[20px] bg-white space-y-6">
+              <div className="h-6 bg-gray-200 rounded w-1/4 mb-6"></div>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {[...Array(6)].map((_, i) => (
+                  <div key={i} className="flex flex-col space-y-2">
+                    <div className="h-4 bg-gray-200 rounded w-1/3"></div>
+                    <div className="h-10 bg-gray-200 rounded-xl w-full"></div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Right Sidebar Skeleton */}
+          <div className="w-full xl:w-[350px] shrink-0 flex flex-col gap-6">
+            {/* User Profile Card Skeleton */}
+            <div className="border border-gray-200 rounded-[20px] p-5 bg-white space-y-4">
+              <div className="flex items-center space-x-4 border-b border-gray-100 pb-4">
+                <div className="w-[50px] h-[50px] bg-gray-200 rounded-full shrink-0"></div>
+                <div className="space-y-2 flex-1">
+                  <div className="h-5 bg-gray-200 rounded w-1/2"></div>
+                  <div className="h-4 bg-gray-200 rounded w-1/3"></div>
+                </div>
+              </div>
+              <div className="space-y-4">
+                <div className="flex items-start space-x-3">
+                  <div className="w-4 h-4 bg-gray-200 rounded mt-0.5 shrink-0"></div>
+                  <div className="space-y-2 flex-1">
+                    <div className="h-3 bg-gray-200 rounded w-1/4"></div>
+                    <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+                  </div>
+                </div>
+                <div className="flex items-start space-x-3">
+                  <div className="w-4 h-4 bg-gray-200 rounded mt-0.5 shrink-0"></div>
+                  <div className="space-y-2 flex-1">
+                    <div className="h-3 bg-gray-200 rounded w-1/4"></div>
+                    <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Timeline Card Skeleton */}
+            <div className="border border-gray-200 rounded-[20px] p-6 bg-white space-y-6">
+              <div className="h-5 bg-gray-200 rounded w-1/3 mb-4"></div>
+              <div className="space-y-6">
+                {[...Array(3)].map((_, i) => (
+                  <div key={i} className="flex items-center gap-4">
+                    <div className="w-6 h-6 rounded-full bg-gray-200 shrink-0"></div>
+                    <div className="space-y-2 flex-1">
+                      <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+                      <div className="h-3 bg-gray-200 rounded w-1/4"></div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
     );
   }
 
@@ -221,10 +309,8 @@ export default function ApplicationDetails() {
             </span>
           </div>
           <div className="flex items-center space-x-4">
-            <a
-              href={doc.fileUrl}
-              target="_blank"
-              rel="noopener noreferrer"
+            <button
+              onClick={() => setPreviewDoc(doc)}
               className="text-[#041A40] hover:scale-110 transition-transform focus:outline-none"
             >
               <svg
@@ -234,7 +320,7 @@ export default function ApplicationDetails() {
               >
                 <path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z" />
               </svg>
-            </a>
+            </button>
             {doc.status === "pending" && (
               <>
                 <button
@@ -703,6 +789,79 @@ export default function ApplicationDetails() {
           </div>
         </div>
       </div>
+      {/* Document Preview Modal */}
+      {previewDoc && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="bg-white rounded-[20px] max-w-5xl w-full flex flex-col max-h-[95vh] shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+            {/* Modal Header */}
+            <div className="flex justify-between items-center p-4 border-b border-gray-100">
+              <div>
+                <h3 className="text-base font-bold text-[#041A40]">
+                  {formatLabel(previewDoc.fieldKey)}
+                </h3>
+                <p className="text-[11px] text-gray-400">
+                  Uploaded on {formatDate(app?.createdAt)}
+                </p>
+              </div>
+              <button
+                onClick={() => setPreviewDoc(null)}
+                className="w-7 h-7 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition-colors text-gray-500 focus:outline-none"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Modal Content / Preview Area */}
+            <div className="flex-1 bg-gray-50 p-4 overflow-y-auto flex items-center justify-center min-h-[400px]">
+              {previewDoc.fileUrl?.toLowerCase().endsWith(".pdf") || previewDoc.fileUrl?.includes(".pdf") ? (
+                <iframe
+                  src={`${previewDoc.fileUrl}#toolbar=0`}
+                  title={formatLabel(previewDoc.fieldKey)}
+                  className="w-full h-[65vh] border border-gray-200 rounded-xl"
+                />
+              ) : (
+                <img
+                  src={previewDoc.fileUrl}
+                  alt={formatLabel(previewDoc.fieldKey)}
+                  className="max-h-[65vh] object-contain rounded-xl shadow-sm"
+                />
+              )}
+            </div>
+
+            {/* Modal Footer */}
+            <div className="p-4 border-t border-gray-100 flex justify-end items-center space-x-2">
+              <button
+                onClick={() => setPreviewDoc(null)}
+                className="px-3 py-1.5 rounded-lg border border-gray-200 hover:bg-gray-50 text-gray-700 text-xs font-bold transition-all focus:outline-none"
+              >
+                Close
+              </button>
+              
+              <a
+                href={previewDoc.fileUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-gray-200 hover:bg-gray-50 text-gray-700 text-xs font-bold transition-all focus:outline-none"
+              >
+                <ExternalLink className="w-3.5 h-3.5" />
+                Open in New Tab
+              </a>
+
+              <button
+                onClick={() => {
+                  handleDownload(previewDoc.fileUrl, formatLabel(previewDoc.fieldKey));
+                  setPreviewDoc(null);
+                }}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#041A40] hover:bg-[#082962] text-white text-xs font-bold transition-all focus:outline-none"
+              >
+                <Download className="w-3.5 h-3.5" />
+                Download
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
+
   );
 }

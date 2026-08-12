@@ -339,22 +339,20 @@ function StepperSidebar({ steps, activeStep, onStepClick, completedSteps }) {
               key={step.key}
               type="button"
               onClick={() => onStepClick(idx)}
-              className={`flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm font-medium transition-all duration-200 ${
-                isActive
+              className={`flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm font-medium transition-all duration-200 ${isActive
                   ? "bg-[#041A40] text-white shadow-md shadow-[#041A40]/20"
                   : isCompleted
-                  ? "bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
-                  : "text-slate-500 hover:bg-slate-100 hover:text-slate-700"
-              }`}
+                    ? "bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
+                    : "text-slate-500 hover:bg-slate-100 hover:text-slate-700"
+                }`}
             >
               <span
-                className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-xs font-bold ${
-                  isActive
+                className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-xs font-bold ${isActive
                     ? "bg-white/20 text-white"
                     : isCompleted
-                    ? "bg-emerald-100 text-emerald-600"
-                    : "bg-slate-100 text-slate-400"
-                }`}
+                      ? "bg-emerald-100 text-emerald-600"
+                      : "bg-slate-100 text-slate-400"
+                  }`}
               >
                 {isCompleted ? <CheckCircle2 size={14} /> : <Icon size={14} />}
               </span>
@@ -379,13 +377,12 @@ function MobileStepBar({ steps, activeStep, onStepClick, completedSteps }) {
             key={step.key}
             type="button"
             onClick={() => onStepClick(idx)}
-            className={`flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition-all ${
-              isActive
+            className={`flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition-all ${isActive
                 ? "bg-[#041A40] text-white shadow-sm"
                 : isCompleted
-                ? "bg-emerald-50 text-emerald-700"
-                : "bg-slate-100 text-slate-500"
-            }`}
+                  ? "bg-emerald-50 text-emerald-700"
+                  : "bg-slate-100 text-slate-500"
+              }`}
           >
             {isCompleted && <CheckCircle2 size={11} />}
             {step.label}
@@ -920,14 +917,14 @@ export default function CreateServices() {
                     required
                   />
                   <TriLangInput label="Processing Time" value={processingTime} onChange={setProcessingTime} showError={submitAttempted} />
-                  <TriLangInput
+                  {/* <TriLangInput
                     label="WhatsApp Template"
                     value={whatsappTemplate}
                     onChange={setWhatsappTemplate}
                     showError={submitAttempted}
                     textarea
                     hint="Use {{name}} and {{link}} as placeholders"
-                  />
+                  /> */}
                 </div>
               </SectionCard>
             )}
@@ -1253,13 +1250,12 @@ export default function CreateServices() {
                     key={idx}
                     type="button"
                     onClick={() => goToStep(idx)}
-                    className={`h-2 rounded-full transition-all duration-300 ${
-                      activeStep === idx
+                    className={`h-2 rounded-full transition-all duration-300 ${activeStep === idx
                         ? "w-6 bg-[#041A40]"
                         : completedSteps.has(idx)
-                        ? "w-2 bg-emerald-400"
-                        : "w-2 bg-slate-200"
-                    }`}
+                          ? "w-2 bg-emerald-400"
+                          : "w-2 bg-slate-200"
+                      }`}
                   />
                 ))}
               </div>
