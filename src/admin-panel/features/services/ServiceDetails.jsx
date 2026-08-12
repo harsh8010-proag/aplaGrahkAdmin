@@ -88,11 +88,18 @@ const ServiceDetails = () => {
       color: "bg-green-100 text-green-600",
     },
     {
-      title: "Service Fees",
-      value: `₹${service?.stats?.serviceFee ?? (service?.price || 0) / 100}`,
+      title: "Service Fee",
+      value: `₹${service?.stats?.serviceFee ?? service?.serviceFee ?? service?.price ?? 0}`,
       sub: "Per application",
       icon: IndianRupee,
       color: "bg-orange-100 text-orange-500",
+    },
+    {
+      title: "Platform Fee",
+      value: `₹${service?.stats?.platformFee ?? service?.platformFee ?? 0}`,
+      sub: "Per application",
+      icon: IndianRupee,
+      color: "bg-amber-100 text-amber-600",
     },
     {
       title: "Estimated Time",

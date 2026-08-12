@@ -11,7 +11,8 @@ import { useGetAllDocumentTypeQuery } from "../../redux/api/documentApi";
 const DynamicInputModal = ({ isOpen, onClose, initialData }) => {
   const [fields, setFields] = useState([""]);
   const [serviceName, setServiceName] = useState("");
-  const [fees, setFees] = useState("");
+  const [serviceFee, setServiceFee] = useState("");
+  const [platformFee, setPlatformFee] = useState("");
 
   const { data: docTypesResponse } = useGetAllDocumentTypeQuery(undefined, { skip: !isOpen });
   const docTypes = Array.isArray(docTypesResponse) ? docTypesResponse : docTypesResponse?.data || [];
@@ -24,7 +25,8 @@ const DynamicInputModal = ({ isOpen, onClose, initialData }) => {
     if (isOpen) {
       if (initialData) {
         setServiceName(initialData.name?.en || initialData.name || "");
-        setFees(initialData.price ? (initialData.price / 100).toString() : "");
+        setServiceFee(String(initialData.serviceFee ?? initialData.price ?? ""));
+        setPlatformFee(String(initialData.platformFee ?? 0));
         if (initialData.documents && initialData.documents.length > 0) {
           setFields(initialData.documents.map(d => {
             if (typeof d === 'string') return d;
@@ -36,11 +38,14 @@ const DynamicInputModal = ({ isOpen, onClose, initialData }) => {
         }
       } else {
         setServiceName("");
-        setFees("");
+        setServiceFee("");
+        setPlatformFee("");
         setFields([""]);
       }
     }
   }, [isOpen, initialData]);
+
+  const totalFee = Number(serviceFee || 0) + Number(platformFee || 0);
 
   // Add new input field
   const addField = () => {
@@ -55,15 +60,17 @@ const DynamicInputModal = ({ isOpen, onClose, initialData }) => {
   };
 
   const handleSaveService = async () => {
-    if (!serviceName || !fees) {
-      toast.error("Please enter service name and fees");
+    if (!serviceName || serviceFee === "" || platformFee === "") {
+      toast.error("Please enter service name, service fee and platform fee");
       return;
     }
     try {
       const payload = {
         name: { en: serviceName },
         description: { en: "Service added via quick add" },
-        price: Number(fees) * 100,
+        serviceFee: Number(serviceFee),
+        platformFee: Number(platformFee),
+        price: totalFee,
         isActive: initialData ? initialData.isActive : true,
         documents: fields.filter(f => typeof f === 'string' && f.trim() !== "").map(f => {
           const selectedDocType = docTypes.find(dt => dt._id === f);
@@ -137,15 +144,33 @@ const DynamicInputModal = ({ isOpen, onClose, initialData }) => {
           {/* Fees */}
           <div className="mb-5">
             <label className="block text-[15px] font-medium text-gray-800 mb-2">
-              Fees
+              Service Fee
             </label>
             <input
               type="number"
-              value={fees}
-              onChange={(e) => setFees(e.target.value)}
+              value={serviceFee}
+              onChange={(e) => setServiceFee(e.target.value)}
               placeholder="E.g 100"
               className="w-full border border-gray-200 rounded-xl px-4 py-3.5 text-sm bg-white outline-none focus:ring-2 focus:ring-orange-400 placeholder:text-gray-400"
             />
+          </div>
+
+          <div className="mb-5">
+            <label className="block text-[15px] font-medium text-gray-800 mb-2">
+              Platform Fee
+            </label>
+            <input
+              type="number"
+              value={platformFee}
+              onChange={(e) => setPlatformFee(e.target.value)}
+              placeholder="E.g 0"
+              className="w-full border border-gray-200 rounded-xl px-4 py-3.5 text-sm bg-white outline-none focus:ring-2 focus:ring-orange-400 placeholder:text-gray-400"
+            />
+          </div>
+
+          <div className="mb-5 rounded-xl border border-gray-100 bg-gray-50 px-4 py-3 flex items-center justify-between text-sm">
+            <span className="font-medium text-gray-600">Total Amount</span>
+            <span className="font-semibold text-gray-900">Rs.{totalFee}</span>
           </div>
 
           {/* Required Documents */}

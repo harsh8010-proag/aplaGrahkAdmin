@@ -68,6 +68,12 @@ function toCamelCase(str = "") {
     .replace(/[^a-zA-Z0-9]/g, "");
 }
 
+function toFeeNumber(value) {
+  if (value === "" || value === null || value === undefined) return 0;
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : NaN;
+}
+
 // ============ STEP DEFINITIONS ============
 const STEPS = [
   { key: "basic", label: "Basic Info", icon: FileText },
@@ -398,7 +404,8 @@ export default function CreateServices() {
   // ============ BASIC STATES ============
   const [name, setName] = useState(emptyTri);
   const [description, setDescription] = useState(emptyTri);
-  const [price, setPrice] = useState("");
+  const [serviceFee, setServiceFee] = useState("");
+  const [platformFee, setPlatformFee] = useState("");
   const [processingTime, setProcessingTime] = useState(emptyTri);
   const [isActive, setIsActive] = useState(true);
   const [displayOrder, setDisplayOrder] = useState("1");
@@ -452,11 +459,17 @@ export default function CreateServices() {
     refetchOnReconnect: false,
   });
   const isSubmitting = isLoading || isUpdating;
+  const totalFee = useMemo(() => {
+    const service = toFeeNumber(serviceFee);
+    const platform = toFeeNumber(platformFee);
+    if (Number.isNaN(service) || Number.isNaN(platform)) return NaN;
+    return service + platform;
+  }, [serviceFee, platformFee]);
 
   // ============ SNAPSHOT INITIAL STATE FOR DIRTY CHECK ============
   const getCurrentSnapshot = useCallback(() => {
-    return JSON.stringify({ name, description, price, processingTime, isActive, displayOrder, whatsappTemplate, option, question, documents, formFields, iconFile: iconFile?.name || null });
-  }, [name, description, price, processingTime, isActive, displayOrder, whatsappTemplate, option, question, documents, formFields, iconFile]);
+    return JSON.stringify({ name, description, serviceFee, platformFee, processingTime, isActive, displayOrder, whatsappTemplate, option, question, documents, formFields, iconFile: iconFile?.name || null });
+  }, [name, description, serviceFee, platformFee, processingTime, isActive, displayOrder, whatsappTemplate, option, question, documents, formFields, iconFile]);
 
   const isDirty = useMemo(() => {
     if (!initialStateRef.current) return false;
@@ -489,7 +502,8 @@ export default function CreateServices() {
     if (!editingService) return;
     setName({ ...emptyTri, ...(editingService.name || {}) });
     setDescription({ ...emptyTri, ...(editingService.description || {}) });
-    setPrice(String(editingService.price ?? ""));
+    setServiceFee(String(editingService.serviceFee ?? editingService.price ?? ""));
+    setPlatformFee(String(editingService.platformFee ?? 0));
     setProcessingTime({ ...emptyTri, ...(editingService.processingTime || {}) });
     setIsActive(editingService.isActive ?? true);
     setDisplayOrder(String(editingService.displayOrder ?? "1"));
@@ -537,8 +551,8 @@ export default function CreateServices() {
     const completed = new Set();
     // Step 0: Basic Info — name + description filled
     if (name.en?.trim() && description.en?.trim()) completed.add(0);
-    // Step 1: Pricing — price filled
-    if (price !== "" && !Number.isNaN(Number(price)) && Number(price) >= 0) completed.add(1);
+    // Step 1: Pricing — both fee fields filled
+    if (serviceFee !== "" && platformFee !== "" && !Number.isNaN(totalFee) && totalFee >= 0) completed.add(1);
     // Step 2: Category — optional, mark complete if anything typed
     if (option.name.en?.trim()) completed.add(2);
     // Step 3: FAQ — optional, mark complete if anything typed
@@ -548,7 +562,7 @@ export default function CreateServices() {
     // Step 5: Form Fields — at least one with a key
     if (formFields.some((f) => f.key?.trim())) completed.add(5);
     return completed;
-  }, [name, description, price, option, question, documents, formFields]);
+  }, [name, description, serviceFee, platformFee, totalFee, option, question, documents, formFields]);
 
   // ============ DOCUMENT FUNCTIONS ============
   const updateDocument = (idx, patch) =>
@@ -732,8 +746,10 @@ export default function CreateServices() {
     const errors = [];
     if (!name.en?.trim()) errors.push("Service name (English) is required.");
     if (!description.en?.trim()) errors.push("Description (English) is required.");
-    if (price === "" || Number.isNaN(Number(price)) || Number(price) < 0)
-      errors.push("Enter a valid price.");
+    if (serviceFee === "" || Number.isNaN(Number(serviceFee)) || Number(serviceFee) < 0)
+      errors.push("Enter a valid service fee.");
+    if (platformFee === "" || Number.isNaN(Number(platformFee)) || Number(platformFee) < 0)
+      errors.push("Enter a valid platform fee.");
     formFields.forEach((f, i) => {
       if (!f.key.trim() || !OPTION_BASED_TYPES.includes(f.inputType)) return;
       if (f.options.length === 0) {
@@ -746,7 +762,7 @@ export default function CreateServices() {
       }
     });
     return errors;
-  }, [name, description, price, formFields]);
+  }, [name, description, serviceFee, platformFee, formFields]);
 
   // ============ SUBMIT ============
   const handleSubmit = async (e) => {
@@ -757,7 +773,7 @@ export default function CreateServices() {
       toast.error(validationErrors[0]);
       // Jump to the step with the first error
       if (!name.en?.trim() || !description.en?.trim()) setActiveStep(0);
-      else if (price === "" || Number.isNaN(Number(price)) || Number(price) < 0) setActiveStep(1);
+      else if (serviceFee === "" || platformFee === "" || Number.isNaN(Number(totalFee)) || totalFee < 0) setActiveStep(1);
       else setActiveStep(5); // form field errors
       return;
     }
@@ -777,7 +793,9 @@ export default function CreateServices() {
 
       fd.append("name", JSON.stringify(name));
       fd.append("description", JSON.stringify(description));
-      fd.append("price", price);
+      fd.append("serviceFee", serviceFee);
+      fd.append("platformFee", platformFee);
+      fd.append("price", String(totalFee));
       fd.append("processingTime", JSON.stringify(processingTime));
       fd.append("documents", JSON.stringify(cleanedDocuments));
       fd.append("formFields", JSON.stringify(cleanedFormFields));
@@ -938,14 +956,32 @@ export default function CreateServices() {
               >
                 <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
                   <div>
-                    <FieldLabel required>Fees</FieldLabel>
+                    <FieldLabel required>Service Fee</FieldLabel>
                     <TextInput
                       type="number"
                       min="0"
-                      value={price}
-                      onChange={(e) => setPrice(e.target.value)}
-                      placeholder="e.g. 200"
+                      value={serviceFee}
+                      onChange={(e) => setServiceFee(e.target.value)}
+                      placeholder="e.g. 1500"
                     />
+                  </div>
+
+                  <div>
+                    <FieldLabel required>Platform Fee</FieldLabel>
+                    <TextInput
+                      type="number"
+                      min="0"
+                      value={platformFee}
+                      onChange={(e) => setPlatformFee(e.target.value)}
+                      placeholder="e.g. 0"
+                    />
+                  </div>
+
+                  <div className="sm:col-span-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700 flex items-center justify-between">
+                    <span className="font-medium">Total Amount</span>
+                    <span className="font-semibold text-slate-900">
+                      Rs.{Number.isNaN(totalFee) ? "0" : totalFee}
+                    </span>
                   </div>
 
                   <div>
