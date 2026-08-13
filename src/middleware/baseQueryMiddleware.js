@@ -3,6 +3,13 @@ import { fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 const rawBaseQuery = fetchBaseQuery({
   baseUrl: import.meta.env.VITE_BACKEND_URL,
   credentials: "include",
+  prepareHeaders: (headers) => {
+    const token = localStorage.getItem("admin_token");
+    if (token) {
+      headers.set("Authorization", `Bearer ${token}`);
+    }
+    return headers;
+  },
 });
 
 export const baseQueryWithReauth = async (args, api, extraOptions) => {
