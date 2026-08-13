@@ -11,12 +11,15 @@ import {
   Phone,
   MapPin,
   ExternalLink,
+  User,
+  Calendar,
 } from "lucide-react";
 import {
   useGetApplicationByIdQuery,
   useUpdateApplicationDocStatusMutation,
   useUpdateApplicationStatusMutation,
 } from "../../../redux/api/applicationsApi";
+import { useGetUserByIdQuery } from "../../../redux/api/usersApi";
 import Button from "../../../shared/components/Button";
 
 const formatLabel = (key) =>
@@ -50,6 +53,9 @@ export default function ApplicationDetails() {
 
   // console.log("Full API Reponse:", data);
   const app = data?.application;
+  const userId = app?.userId?._id || app?.userId;
+  const { data: userDataResponse } = useGetUserByIdQuery(userId, { skip: !userId });
+  const user = userDataResponse?.user;
 
   // Header WhatsApp icon
   // ADMIN_WHATSAPP_NUMBER wala const hata do, ab zarurat nahi
@@ -542,8 +548,88 @@ export default function ApplicationDetails() {
           <div className="w-full">
             {activeTab === "personal" && (
               <div className="space-y-6">
+                {/* User Profile Card */}
+                <div className="p-6 border border-gray-200 rounded-[20px] bg-white shadow-sm hover:shadow-md transition-shadow duration-350">
+                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b border-gray-100 pb-4 mb-6 gap-4">
+                    <div className="flex items-center space-x-4">
+                      <div className="w-12 h-12 rounded-full bg-[#041A40] flex items-center justify-center text-white font-bold text-lg shrink-0">
+                        {(user?.name || app?.userId?.name || "NA").slice(0, 2).toUpperCase()}
+                      </div>
+                      <div>
+                        <h2 className="text-[#041A40] font-bold text-lg">
+                          User Personal Profile
+                        </h2>
+                        <p className="text-sm text-gray-500 font-medium">
+                          {user?.name || app?.userId?.name || "N/A"}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {user?.isBlock ? (
+                        <span className="px-3 py-1 bg-red-100 text-red-600 text-xs font-bold rounded-full">
+                          Blocked
+                        </span>
+                      ) : (
+                        <span className="px-3 py-1 bg-green-100 text-green-600 text-xs font-bold rounded-full">
+                          Active
+                        </span>
+                      )}
+                      {user?.isDeleted && (
+                        <span className="px-3 py-1 bg-red-100 text-red-600 text-xs font-bold rounded-full">
+                          Deleted Account
+                        </span>
+                      )}
+                      {user?.profileCompleted ? (
+                        <span className="px-3 py-1 bg-blue-100 text-blue-600 text-xs font-bold rounded-full">
+                          Profile Completed
+                        </span>
+                      ) : (
+                        <span className="px-3 py-1 bg-yellow-100 text-yellow-600 text-xs font-bold rounded-full">
+                          Profile Incomplete
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <div className="flex flex-col">
+                      <label className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Mobile Number</label>
+                      <div className="flex items-center space-x-2 px-4 py-3 bg-slate-50 border border-gray-100 rounded-xl text-sm text-gray-700 font-semibold">
+                        <Phone className="w-4 h-4 text-[#FF8303] shrink-0" />
+                        <span>{user?.mobileNumber || app?.userId?.mobileNumber || "N/A"}</span>
+                      </div>
+                    </div>
+                    <div className="flex flex-col">
+                      <label className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Date of Birth</label>
+                      <div className="flex items-center space-x-2 px-4 py-3 bg-slate-50 border border-gray-100 rounded-xl text-sm text-gray-700 font-semibold">
+                        <Calendar className="w-4 h-4 text-[#FF8303] shrink-0" />
+                        <span>{user?.dateOfBirth || "N/A"}</span>
+                      </div>
+                    </div>
+                    <div className="flex flex-col">
+                      <label className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Taluka</label>
+                      <div className="px-4 py-3 bg-slate-50 border border-gray-100 rounded-xl text-sm text-gray-700 font-semibold">
+                        {user?.taluka || "N/A"}
+                      </div>
+                    </div>
+                    <div className="flex flex-col">
+                      <label className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">District</label>
+                      <div className="px-4 py-3 bg-slate-50 border border-gray-100 rounded-xl text-sm text-gray-700 font-semibold">
+                        {user?.district || "N/A"}
+                      </div>
+                    </div>
+                    <div className="flex flex-col md:col-span-2">
+                      <label className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Full Address</label>
+                      <div className="flex items-start space-x-2 px-4 py-3 bg-slate-50 border border-gray-100 rounded-xl text-sm text-gray-700 font-semibold">
+                        <MapPin className="w-4 h-4 text-[#FF8303] mt-0.5 shrink-0" />
+                        <span>{user?.address || "N/A"}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
                 {/* Dynamic Form Data */}
-                <div className="p-6 border border-gray-200 rounded-[20px] bg-white">
+                <div className="p-6 border border-gray-200 rounded-[20px] bg-white shadow-sm hover:shadow-md transition-shadow duration-350">
                   <h2 className="text-[#041A40] font-bold text-lg mb-6">
                     Application Details
                   </h2>
@@ -565,7 +651,7 @@ export default function ApplicationDetails() {
                 </div>
 
                 {/* Application Meta */}
-                <div className="p-6 border border-gray-200 rounded-[20px] bg-white">
+                <div className="p-6 border border-gray-200 rounded-[20px] bg-white shadow-sm hover:shadow-md transition-shadow duration-350">
                   <h2 className="text-[#041A40] font-bold text-lg mb-6">
                     Application Information
                   </h2>
