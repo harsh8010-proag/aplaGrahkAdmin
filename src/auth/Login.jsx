@@ -80,12 +80,12 @@ export default function Login() {
 
           {/* Tabs */}
           <div className="flex w-full bg-slate-50 p-1 rounded-xl mb-6">
-            <button className="flex-1 bg-[#0A192F] text-white py-2 rounded-lg font-bold text-sm transition-colors">
-              Login
+            <button className="flex-1 bg-zinc-200  text-blue-900  py-2 rounded-lg font-bold text-md transition-colors">
+              Admin Login
             </button>
-            <button className="flex-1 text-gray-500 py-2 rounded-lg font-bold text-sm transition-colors hover:text-gray-700">
+            {/* <button className="flex-1 text-gray-500 py-2 rounded-lg font-bold text-sm transition-colors hover:text-gray-700">
               Register
-            </button>
+            </button> */}
           </div>
 
           {/* Form */}
@@ -114,11 +114,11 @@ export default function Login() {
               />
             </div>
 
-            <div className="text-right">
+            {/* <div className="text-right">
               <a href="#" className="text-sm font-bold text-orange-500 hover:text-orange-600 transition-colors">
                 Forgot Password?
               </a>
-            </div>
+            </div> */}
 
             <button
               type="submit"
