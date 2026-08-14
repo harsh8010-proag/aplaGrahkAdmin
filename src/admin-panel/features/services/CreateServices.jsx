@@ -541,8 +541,12 @@ export default function CreateServices() {
       );
     }
 
-    if (editingService.iconUrl) {
-      setIconPreview(editingService.iconUrl);
+    const iconUrl = editingService.icon || editingService.iconUrl;
+    if (iconUrl) {
+      const fullUrl = iconUrl.startsWith("http") || iconUrl.startsWith("blob:")
+        ? iconUrl
+        : `${import.meta.env.VITE_BACKEND_URL}${iconUrl.startsWith("/") ? "" : "/"}${iconUrl}`;
+      setIconPreview(fullUrl);
     }
   }, [editingService]);
 
