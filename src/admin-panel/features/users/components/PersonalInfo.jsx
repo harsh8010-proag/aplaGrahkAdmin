@@ -100,6 +100,14 @@ export default function PersonalInfo({ user }) {
           </div>
         </div>
 
+        {/* City */}
+        <div className="flex flex-col">
+          <label className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">City</label>
+          <div className="px-4 py-3 bg-slate-50 border border-gray-100 rounded-xl text-sm text-gray-700 font-semibold">
+            {user?.city || "N/A"}
+          </div>
+        </div>
+
         {/* Member Since */}
         <div className="flex flex-col">
           <label className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Member Since</label>
