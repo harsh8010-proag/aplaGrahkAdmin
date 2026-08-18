@@ -161,14 +161,14 @@ const DocumentCards = () => {
                   <div
                     onClick={() => handleToggle(document)}
                     className={`w-[42px] h-6 rounded-full border-2 relative cursor-pointer ${document.isActive
-                        ? "bg-[#041A40] border-[#041A40]"
-                        : "bg-white border-[#041A40]"
+                      ? "bg-[#041A40] border-[#041A40]"
+                      : "bg-white border-[#041A40]"
                       }`}
                   >
                     <span
                       className={`absolute top-[2px] left-[2px] w-4 h-4 rounded-full transition-transform ${document.isActive
-                          ? "bg-white translate-x-[18px]"
-                          : "bg-[#041A40]"
+                        ? "bg-white translate-x-[18px]"
+                        : "bg-[#041A40]"
                         }`}
                     ></span>
                   </div>
@@ -197,7 +197,7 @@ const DocumentCards = () => {
 
               {/* Title */}
               <h3 className="text-lg font-bold text-[#041A40]">
-                {document.title}
+                {document?.name?.en}
               </h3>
 
               <p className="text-xs font-bold text-gray-500 mb-5">
@@ -262,8 +262,8 @@ const DocumentCards = () => {
                 key={page}
                 onClick={() => handlePageChange(page)}
                 className={`px-3 py-1.5 rounded-lg text-sm font-bold ${currentPage === page
-                    ? "bg-[#FF8303] text-white"
-                    : "border border-gray-200 text-[#041A40] hover:bg-gray-100"
+                  ? "bg-[#FF8303] text-white"
+                  : "border border-gray-200 text-[#041A40] hover:bg-gray-100"
                   }`}
               >
                 {page}
