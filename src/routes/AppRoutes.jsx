@@ -21,10 +21,16 @@ const CreateServices = lazy(() => import("../admin-panel/features/services/Creat
 // Loading fallback
 function PageLoader() {
   return (
-    <div className="flex items-center justify-center h-screen bg-white">
-      <div className="flex flex-col items-center space-y-4">
-        <div className="w-10 h-10 border-4 border-[#FF8303] border-t-transparent rounded-full animate-spin"></div>
-        <p className="text-[#041A40] font-bold text-sm">Loading...</p>
+    <div className="flex items-center justify-center h-screen bg-slate-50/50 backdrop-blur-sm">
+      <div className="flex flex-col items-center space-y-4 p-8 rounded-2xl bg-white shadow-xl border border-slate-100/50 animate-in fade-in duration-300">
+        <div className="relative flex items-center justify-center">
+          <div className="w-12 h-12 rounded-full border-4 border-slate-100 border-t-[#FF8303] animate-spin"></div>
+          <div className="absolute w-6 h-6 rounded-full bg-[#041A40]/10 animate-ping"></div>
+        </div>
+        <div className="text-center">
+          <p className="text-[#041A40] font-black text-sm tracking-wide">Aapla Grahak</p>
+          <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-0.5 animate-pulse">Initializing Portal...</p>
+        </div>
       </div>
     </div>
   )
@@ -50,7 +56,7 @@ export default function AppRoutes() {
           <Route path="payments" element={<Payments />} />
           <Route path="support" element={<Support />} />
           <Route path="services/:id" element={<ServiceDetails />} />
-          <Route path='add-service' element={<CreateServices />}/>
+          <Route path='add-service' element={<CreateServices />} />
         </Route>
         <Route path="*" element={<Navigate to="/dashboard" replace />} />
       </Routes>
