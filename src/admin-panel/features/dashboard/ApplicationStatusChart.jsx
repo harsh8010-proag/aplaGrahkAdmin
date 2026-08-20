@@ -38,18 +38,15 @@ export default function ApplicationStatusChart({ data }) {
         <p className="text-sm text-gray-500 font-bold">Real-time breakdown</p>
       </div>
 
-      <div
-        className="relative flex-1 flex items-center justify-center -mt-4"
-        style={{ minHeight: 250 }}
-      >
+      <div className="relative flex-1 flex items-center justify-center" style={{ minHeight: 250 }}>
         <ResponsiveContainer width="100%" height={250} minWidth={0}>
           <PieChart>
             <Pie
               data={data}
               cx="50%"
               cy="50%"
-              innerRadius={80}
-              outerRadius={110}
+              innerRadius="60%"
+              outerRadius="85%"
               paddingAngle={2}
               dataKey="value"
               stroke="none"
@@ -68,14 +65,9 @@ export default function ApplicationStatusChart({ data }) {
           </PieChart>
         </ResponsiveContainer>
 
-        {/* Center Text */}
-        <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none mt-2">
-          <div className="text-2xl font-bold text-gray-900">
-            {total}
-          </div>
-          <div className="text-xs text-gray-400 font-bold tracking-wider">
-            TOTAL
-          </div>
+        <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+          <div className="text-2xl font-bold text-gray-900">{total}</div>
+          <div className="text-xs text-gray-400 font-bold tracking-wider">TOTAL</div>
         </div>
       </div>
 

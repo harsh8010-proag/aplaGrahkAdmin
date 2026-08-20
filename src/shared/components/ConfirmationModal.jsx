@@ -21,7 +21,7 @@ export default function ConfirmationModal({
         onClick={(e) => e.stopPropagation()}
       >
         <h2 className="text-xl font-bold text-[#0B2149] mb-3">{title}</h2>
-        <p className="text-gray-600 mb-8 text-sm">{message}</p>
+        <div className="text-gray-600 mb-8 text-sm">{message}</div>
         
         <div className="flex justify-end space-x-3">
           <button 

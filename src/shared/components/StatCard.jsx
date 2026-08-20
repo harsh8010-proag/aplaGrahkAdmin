@@ -29,7 +29,6 @@ export default function StatCard({
   alertText = "",
 }) {
   const isNegativeTrend = typeof trend === "string" && trend.trim().startsWith("-");
-
   const trendBgColor = isNegativeTrend ? "#FFB3B3A8" : "#B3FF92A8";
   const trendTextColor = isNegativeTrend ? "#B91C1C" : "#2D6A18";
 

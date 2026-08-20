@@ -147,7 +147,7 @@ export default function Dashboard() {
       </div>
 
       {/* Charts Row */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 min-w-[280px]">
         <div className="lg:col-span-2">
           {isLoading ? <DailyApplicationsChartSkeleton /> : <DailyApplicationsChart data={last7Days} />}
         </div>

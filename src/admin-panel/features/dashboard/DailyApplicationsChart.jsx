@@ -100,7 +100,7 @@ export default function DailyApplicationsChart({ data }) {
               }}
             />
             <Area
-              type="natural"
+              type="monotone"
               dataKey="submitted"
               stroke="#3B82F6"
               strokeWidth={3}
@@ -108,7 +108,7 @@ export default function DailyApplicationsChart({ data }) {
               fill="url(#colorSubmitted)"
             />
             <Area
-              type="natural"
+              type="monotone"
               dataKey="approved"
               stroke="#FB923C"
               strokeWidth={3}

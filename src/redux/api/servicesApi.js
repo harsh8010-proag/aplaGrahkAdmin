@@ -51,10 +51,15 @@ export const servicesApi = createApi({
       invalidatesTags: ["Services"],
     }),
     deleteService: builder.mutation({
-      query: (id) => ({
-        url: `/v1/services/${id}`,
-        method: "DELETE",
-      }),
+      query: (arg) => {
+        const id = typeof arg === "string" ? arg : arg.id;
+        const soft = typeof arg === "object" ? arg.soft : undefined;
+        return {
+          url: `/v1/services/${id}`,
+          method: "DELETE",
+          params: soft !== undefined ? { soft } : undefined,
+        };
+      },
       invalidatesTags: ["Services"],
     }),
   }),
