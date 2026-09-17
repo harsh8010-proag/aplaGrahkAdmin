@@ -63,6 +63,9 @@ export default function Navbar({ onLogoClick }) {
           </button>
 
           <button
+
+
+
             onClick={() => navigate("/add-service")}
             className="bg-[#FF8303] hover:bg-[#e67400] text-white 
             w-12 h-12 md:w-auto md:h-auto
@@ -103,6 +106,7 @@ export default function Navbar({ onLogoClick }) {
         <DynamicInputModal
           isOpen={isModalOpen}
           onClose={() => setIsModalOpen(false)}
+
         />
       )}
     </header>

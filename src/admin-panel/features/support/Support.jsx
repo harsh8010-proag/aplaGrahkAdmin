@@ -1,5 +1,5 @@
 import React, { useMemo, useState, useEffect } from "react";
-import { Eye, Mail, MessageSquareText, Phone, RefreshCw, Ticket, User2, X } from "lucide-react";
+import { Eye, Mail, MessageSquareText, Phone, RefreshCw, Ticket, Upload, User2, X } from "lucide-react";
 import { useGetAllContactsQuery, useUpdateContactStatusMutation } from "../../../redux/api/contactsApi";
 import SearchInput from "../../../shared/components/SearchInput";
 import Table from "../../../shared/components/Table";
@@ -117,6 +117,36 @@ export default function Support() {
     }
   };
 
+  const handleExport = () => {
+    if (filtered.length === 0) {
+      alert("No tickets to export.");
+      return;
+    }
+    const headers = ["Ticket ID", "Full Name", "Mobile Number", "Email", "Subject", "Message", "Status", "Created At"];
+    const rows = filtered.map((c) => [
+      getTicketId(c),
+      c.fullName || "-",
+      c.mobileNumber || "-",
+      c.email || "-",
+      c.subject || "-",
+      c.message || "-",
+      c.status || "-",
+      formatDate(c.createdAt),
+    ]);
+    const csvContent = [headers, ...rows]
+      .map((row) => row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(","))
+      .join("\n");
+    const blob = new Blob(["\uFEFF" + csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.setAttribute("download", `support_tickets_${new Date().toISOString().slice(0, 10)}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
   const columns = ["Ticket ID", "User", "Subject", "Message", "Status", "Created", "Action"];
 
   const renderRow = (contact) => {
@@ -232,6 +262,13 @@ export default function Support() {
             setSearch(e.target.value);
             setCurrentPage(1);
           }} placeholder="Search tickets..." />
+          <button
+            onClick={handleExport}
+            title="Export to CSV"
+            className="p-2.5 bg-gray-50 border border-gray-200 rounded-full text-gray-600 hover:bg-gray-100 hover:border-[#FF8303] hover:text-[#FF8303] transition-colors focus:outline-none focus:ring-2 focus:ring-[#FF8303]/20 shrink-0"
+          >
+            <Upload className="w-4 h-4" />
+          </button>
           <button
             onClick={refetch}
             disabled={isFetching}

@@ -14,7 +14,7 @@ export const authApi = createApi({
     }),
     logout: builder.mutation({
       query: () => ({
-        url: '/v1/auth/logout',
+        url: 'v1/admin/logout-admin',
         method: 'POST',
       }),
     }),
@@ -36,8 +36,14 @@ export const authApi = createApi({
         method: 'GET'
       })
 
+    }),
+    getRevenueData: builder.query({
+      query: () => ({
+        url: "v1/admin/get-revenue-data",
+        method: 'GET'
+      })
     })
   }),
 });
 
-export const { useLoginMutation, useLogoutMutation, useGetAdminQuery, useGetAdminUsersQuery, useGetDashbaordQuery } = authApi;
+export const { useLoginMutation, Payments, useGetAdminQuery, useGetAdminUsersQuery, useGetDashbaordQuery, useGetRevenueDataQuery, useLogoutMutation } = authApi;

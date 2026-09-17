@@ -3,11 +3,10 @@ import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 
 import {
-
-
   CreditCard,
   XCircle,
   Download,
+  Upload,
   Check,
   X,
   Eye,
@@ -18,7 +17,6 @@ import {
   ExternalLink,
 } from "lucide-react";
 import StatCard from "../../../shared/components/StatCard";
-import Button from "../../../shared/components/Button";
 import SearchInput from "../../../shared/components/SearchInput";
 import Table from "../../../shared/components/Table";
 import {
@@ -225,6 +223,35 @@ export default function Payments() {
   };
 
   const failedCount = rejectCount;
+
+  const handleExport = () => {
+    if (filteredPayments.length === 0) {
+      alert("No payments to export.");
+      return;
+    }
+    const headers = ["Transaction ID", "User Name", "Phone", "Application ID", "Payment Status", "Date", "Amount"];
+    const rows = filteredPayments.map((p) => [
+      p.transactionId,
+      p.userName,
+      p.phone,
+      p.applicationId,
+      p.payment,
+      p.date,
+      p.amount,
+    ]);
+    const csvContent = [headers, ...rows]
+      .map((row) => row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(","))
+      .join("\n");
+    const blob = new Blob(["\uFEFF" + csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.setAttribute("download", `payments_${new Date().toISOString().slice(0, 10)}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
 
   const getPaymentBadge = (payment) => {
     if (payment === "Success") {
@@ -488,8 +515,6 @@ export default function Payments() {
   const renderPagination = () => {
     if (totalPages <= 1) return null;
 
-    const pageNumbers = Array.from({ length: totalPages }, (_, i) => i + 1);
-
     return (
       <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-6">
         <p className="text-xs font-bold text-gray-500">
@@ -498,7 +523,7 @@ export default function Payments() {
           {filteredPayments.length}
         </p>
 
-        <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-1">
           <button
             onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
             disabled={safePage === 1}
@@ -507,18 +532,27 @@ export default function Payments() {
             <ChevronLeft size={16} />
           </button>
 
-          {pageNumbers.map((num) => (
-            <button
-              key={num}
-              onClick={() => setCurrentPage(num)}
-              className={`w-8 h-8 flex items-center justify-center rounded-full text-xs font-bold transition-colors ${num === safePage
-                ? "bg-[#FF8303] text-white"
-                : "bg-white border border-gray-200 text-gray-600 hover:border-[#FF8303] hover:text-[#FF8303]"
-                }`}
-            >
-              {num}
-            </button>
-          ))}
+          {Array.from({ length: totalPages }, (_, i) => i + 1)
+            .filter((page) => page === 1 || page === totalPages || Math.abs(page - safePage) <= 1)
+            .reduce((items, page, index, pages) => {
+              if (index > 0 && pages[index - 1] !== page - 1) items.push("...");
+              items.push(page);
+              return items;
+            }, [])
+            .map((item, index) => item === "..." ? (
+              <span key={`ellipsis-${index}`} className="flex h-8 w-5 items-center justify-center text-xs font-bold text-gray-400">…</span>
+            ) : (
+              <button
+                key={item}
+                onClick={() => setCurrentPage(item)}
+                className={`w-8 h-8 shrink-0 flex items-center justify-center rounded-full text-xs font-bold transition-colors ${item === safePage
+                  ? "bg-[#FF8303] text-white"
+                  : "bg-white border border-gray-200 text-gray-600 hover:border-[#FF8303] hover:text-[#FF8303]"
+                  }`}
+              >
+                {item}
+              </button>
+            ))}
 
           <button
             onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
@@ -561,14 +595,10 @@ export default function Payments() {
           trendText="All time"
         />
 
-        {/* Empty slots for 3rd and 4th column */}
+        {/* Empty slots for 3rd, 4th and 5th column */}
         <div className="hidden lg:block"></div>
         <div className="hidden lg:block"></div>
-
-        {/* Export Button in 5th column space */}
-        <div className="flex justify-end items-end h-full">
-          <Button icon={Download}>Export</Button>
-        </div>
+        <div className="hidden lg:block"></div>
       </div>
 
       {/* Table Section */}
@@ -630,6 +660,13 @@ export default function Payments() {
               value={searchTerm}
               onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
             />
+            <button
+              onClick={handleExport}
+              title="Export to CSV"
+              className="p-2.5 bg-gray-50 border border-gray-200 rounded-full text-gray-600 hover:bg-gray-100 hover:border-[#FF8303] hover:text-[#FF8303] transition-colors focus:outline-none focus:ring-2 focus:ring-[#FF8303]/20 shrink-0"
+            >
+              <Upload className="w-4 h-4" />
+            </button>
             <button
               onClick={refetch}
               disabled={isLoading}

@@ -1,8 +1,7 @@
-import { Users as UsersIcon, Ban, Download, Loader2, UserX, RefreshCw, ChevronLeft, ChevronRight } from "lucide-react";
+import { Users as UsersIcon, Ban, Upload, Loader2, UserX, RefreshCw, ChevronLeft, ChevronRight } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useEffect, useMemo, useState } from "react";
 import StatCard from "../../../shared/components/StatCard";
-import Button from "../../../shared/components/Button";
 import SearchInput from "../../../shared/components/SearchInput";
 import Table from "../../../shared/components/Table";
 import {
@@ -334,9 +333,6 @@ export default function Users() {
             <StatCard title="Deleted Users" value={totalUserDeleteCount} icon={UserX} iconBgColor="bg-red-500" trend="" trendText="Deleted accounts" />
           </div>
         </div>
-        <Button icon={Download} onClick={handleExport}>
-          Export
-        </Button>
       </div>
 
       <div className="bg-white rounded-[20px] p-6 shadow-sm border border-slate-100">
@@ -351,6 +347,13 @@ export default function Users() {
                 setCurrentPage(1);
               }}
             />
+            <button
+              onClick={handleExport}
+              title="Export to Excel"
+              className="p-2.5 bg-gray-50 border border-gray-200 rounded-full text-gray-600 hover:bg-gray-100 hover:border-[#FF8303] hover:text-[#FF8303] transition-colors focus:outline-none focus:ring-2 focus:ring-[#FF8303]/20 shrink-0"
+            >
+              <Upload className="w-4 h-4" />
+            </button>
             <button
               onClick={handleRefresh}
               disabled={isRefreshing || isFetching}

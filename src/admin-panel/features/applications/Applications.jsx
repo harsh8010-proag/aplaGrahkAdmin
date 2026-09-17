@@ -5,15 +5,17 @@ import {
   Clock,
   CheckCircle2,
   XCircle,
-  Download,
+  Upload,
   RefreshCw,
   Check,
   X,
   User,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import { FaFileCircleCheck } from "react-icons/fa6";
 import StatCard from "../../../shared/components/StatCard";
-import Button from "../../../shared/components/Button";
+
 import SearchInput from "../../../shared/components/SearchInput";
 import Table from "../../../shared/components/Table";
 
@@ -238,7 +240,7 @@ export default function Applications() {
     return matchesStatus && matchesSearch;
   });
 
-  const totalPages = Math.ceil(filteredApplications.length / applicationsPerPage);
+  const totalPages = Math.max(1, Math.ceil(filteredApplications.length / applicationsPerPage));
   const indexOfLastApp = currentPage * applicationsPerPage;
   const indexOfFirstApp = indexOfLastApp - applicationsPerPage;
   const paginatedApplications = filteredApplications.slice(indexOfFirstApp, indexOfLastApp);
@@ -247,6 +249,10 @@ export default function Applications() {
     if (page < 1 || page > totalPages) return;
     setCurrentPage(page);
   };
+
+  useEffect(() => {
+    if (currentPage > totalPages) setCurrentPage(totalPages);
+  }, [currentPage, totalPages]);
 
   const handleExport = () => {
     if (filteredApplications.length === 0) {
@@ -589,11 +595,7 @@ export default function Applications() {
               trend={null}
               trendText=""
             />
-            <div className="flex justify-end items-end h-full">
-              <Button icon={Download} onClick={handleExport}>
-                Export
-              </Button>
-            </div>
+            <div className="hidden lg:block"></div>
           </>
         )}
       </div>
@@ -630,6 +632,13 @@ export default function Applications() {
               value={searchTerm}
               onChange={handleSearchChange}
             />
+            <button
+              onClick={handleExport}
+              title="Export to CSV"
+              className="p-2.5 bg-gray-50 border border-gray-200 rounded-full text-gray-600 hover:bg-gray-100 hover:border-[#FF8303] hover:text-[#FF8303] transition-colors focus:outline-none focus:ring-2 focus:ring-[#FF8303]/20 shrink-0"
+            >
+              <Upload className="w-4 h-4" />
+            </button>
             <button
               onClick={refetch}
               disabled={isLoading}
@@ -681,34 +690,45 @@ export default function Applications() {
               {Math.min(indexOfLastApp, filteredApplications.length)} of {filteredApplications.length} applications
             </p>
 
-            <div className="flex items-center space-x-2">
+            <div className="flex items-center gap-1">
               <button
                 onClick={() => handlePageChange(currentPage - 1)}
                 disabled={currentPage === 1}
-                className="px-3 py-1.5 rounded-lg border border-gray-200 text-sm font-bold text-[#041A40] disabled:opacity-40 disabled:cursor-not-allowed hover:bg-gray-100"
+                aria-label="Previous page"
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-600 transition-colors hover:border-[#FF8303] hover:text-[#FF8303] disabled:cursor-not-allowed disabled:opacity-40"
               >
-                Prev
+                <ChevronLeft className="h-4 w-4" />
               </button>
 
-              {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-                <button
-                  key={page}
-                  onClick={() => handlePageChange(page)}
-                  className={`px-3 py-1.5 rounded-lg text-sm font-bold ${currentPage === page
-                    ? "bg-[#FF8303] text-white"
-                    : "border border-gray-200 text-[#041A40] hover:bg-gray-100"
-                    }`}
-                >
-                  {page}
-                </button>
-              ))}
+              {Array.from({ length: totalPages }, (_, i) => i + 1)
+                .filter((page) => page === 1 || page === totalPages || Math.abs(page - currentPage) <= 1)
+                .reduce((items, page, index, pages) => {
+                  if (index > 0 && pages[index - 1] !== page - 1) items.push("...");
+                  items.push(page);
+                  return items;
+                }, [])
+                .map((item, index) => item === "..." ? (
+                  <span key={`ellipsis-${index}`} className="flex h-9 w-5 items-center justify-center text-sm font-bold text-gray-400">…</span>
+                ) : (
+                  <button
+                    key={item}
+                    onClick={() => handlePageChange(item)}
+                    className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-sm font-bold transition-colors ${currentPage === item
+                      ? "bg-[#FF8303] text-white"
+                      : "border border-gray-200 bg-white text-gray-600 hover:border-[#FF8303] hover:text-[#FF8303]"
+                      }`}
+                  >
+                    {item}
+                  </button>
+                ))}
 
               <button
                 onClick={() => handlePageChange(currentPage + 1)}
                 disabled={currentPage === totalPages}
-                className="px-3 py-1.5 rounded-lg border border-gray-200 text-sm font-bold text-[#041A40] disabled:opacity-40 disabled:cursor-not-allowed hover:bg-gray-100"
+                aria-label="Next page"
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-600 transition-colors hover:border-[#FF8303] hover:text-[#FF8303] disabled:cursor-not-allowed disabled:opacity-40"
               >
-                Next
+                <ChevronRight className="h-4 w-4" />
               </button>
             </div>
           </div>
