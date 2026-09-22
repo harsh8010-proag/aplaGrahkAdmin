@@ -41,22 +41,24 @@ export default function AppRoutes() {
     <Suspense fallback={<PageLoader />}>
       <Routes>
         <Route path="/login" element={<Login />} />
-        {/* Admin Panel Routes */}
-        <Route path="/" element={<ProtectedRoute><AdminLayout /></ProtectedRoute>}>
-          <Route index element={<Navigate to="/dashboard" replace />} />
-          <Route path="dashboard" element={<Dashboard />} />
-          <Route path="users" element={<Users />} />
-          <Route path="users/:id" element={<UserProfile />} />
-          {/* Placeholder for other admin routes */}
-          <Route path="requests" element={<Applications />} />
-          <Route path="requests/:id" element={<ApplicationDetails />} />
-          <Route path="services" element={<Services />} />
-          <Route path="document" element={<DocumentCards />} />
-          <Route path="document/add" element={<AddDocumentModal />} />
-          <Route path="payments" element={<Payments />} />
-          <Route path="support" element={<Support />} />
-          <Route path="services/:id" element={<ServiceDetails />} />
-          <Route path='add-service' element={<CreateServices />} />
+        {/* ProtectedRoute renders an Outlet; AdminLayout must therefore be a
+            nested route, not a child prop that would be ignored. */}
+        <Route element={<ProtectedRoute />}>
+          <Route path="/" element={<AdminLayout />}>
+            <Route index element={<Navigate to="/dashboard" replace />} />
+            <Route path="dashboard" element={<Dashboard />} />
+            <Route path="users" element={<Users />} />
+            <Route path="users/:id" element={<UserProfile />} />
+            <Route path="requests" element={<Applications />} />
+            <Route path="requests/:id" element={<ApplicationDetails />} />
+            <Route path="services" element={<Services />} />
+            <Route path="document" element={<DocumentCards />} />
+            <Route path="document/add" element={<AddDocumentModal />} />
+            <Route path="payments" element={<Payments />} />
+            <Route path="support" element={<Support />} />
+            <Route path="services/:id" element={<ServiceDetails />} />
+            <Route path="add-service" element={<CreateServices />} />
+          </Route>
         </Route>
         <Route path="*" element={<Navigate to="/dashboard" replace />} />
       </Routes>

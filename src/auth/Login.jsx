@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { Loader2 } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -10,14 +11,13 @@ export default function Login() {
   const [login, { isLoading }] = useLoginMutation();
   const [error, setError] = useState(null);
   const navigate = useNavigate();
+  const accessToken = useSelector((state) => state.auth.accessToken);
 
   useEffect(() => {
-    const token = localStorage.getItem('admin_token');
-    const userData = localStorage.getItem('user_data');
-    if (token || userData) {
-      navigate('/dashboard');
+    if (accessToken) {
+      navigate('/dashboard', { replace: true });
     }
-  }, [navigate]);
+  }, [accessToken, navigate]);
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -26,27 +26,10 @@ export default function Login() {
       const response = await login({ email, password }).unwrap();
 
 
-      // Aggressively search for the token in common response structures
-      const token =
-        response?.token ||
-        response?.data?.token ||
-        response?.accessToken ||
-        response?.data?.accessToken ||
-        response?.access_token ||
-        response?.data?.access_token;
-
-      if (token) {
-        localStorage.setItem('admin_token', token);
-
-
-      } else {
-        console.warn('Could not find a token in the login response!', response);
-      }
-
-      localStorage.setItem('user_data', JSON.stringify(response));
-
-      // Force navigation
-      navigate('/dashboard');
+      // authApi stores the access token in Redux. Do not use localStorage as
+      // a second source of authentication state: the route guard cannot see
+      // it, which was the cause of the /login <-> /dashboard redirect loop.
+      navigate('/dashboard', { replace: true });
       toast.success("Successfully logged in!");
     } catch (err) {
       console.error('Login error:', err);

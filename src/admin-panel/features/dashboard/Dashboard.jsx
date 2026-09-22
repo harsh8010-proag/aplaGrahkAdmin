@@ -3,7 +3,7 @@ import { useEffect } from "react";
 import StatCard, { StatCardSkeleton } from "../../../shared/components/StatCard";
 import DailyApplicationsChart, { DailyApplicationsChartSkeleton } from "./DailyApplicationsChart";
 import ApplicationStatusChart, { ApplicationStatusChartSkeleton } from "./ApplicationStatusChart";
-import { useGetDashbaordQuery } from "../../../redux/api/authApi";
+import { useGetDashboardQuery } from "../../../redux/api/Admindataapi";
 
 // Computes a real trend % from two numeric values.
 // Returns { trend: "+12%", trendText: "..." } and handles 0/0 and divide-by-zero safely.
@@ -26,8 +26,8 @@ function calculateTrend(current, previous) {
 }
 
 export default function Dashboard() {
-  const { data: dashboardData, isLoading, isFetching, refetch } = useGetDashbaordQuery();
-
+  const { data: dashboardData, isLoading, isFetching, refetch } = useGetDashboardQuery();
+  console.log('dashboardData i am heare', dashboardData)
   useEffect(() => {
     refetch();
   }, [refetch]);
