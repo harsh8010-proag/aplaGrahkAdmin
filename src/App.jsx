@@ -5,6 +5,7 @@ function App() {
     <div className="min-h-screen text-slate-800 bg-slate-50 font-sans">
       <AppRoutes />
     </div>
+
   )
 }
 

@@ -45,7 +45,6 @@ export default function Sidebar({ onNavigate }) {
       setIsLogoutModalOpen(false);
     }
   };
-
   return (
     <div className="w-full h-full bg-[#041A40] flex flex-col items-center pt-2 pb-4 lg:pb-6 z-20 rounded-2xl overflow-y-auto">
       <div className="w-full flex flex-col items-center">
@@ -55,8 +54,7 @@ export default function Sidebar({ onNavigate }) {
             to={item.path}
             onClick={onNavigate}
             className={({ isActive }) =>
-              `flex flex-col items-center justify-center w-[78px] lg:w-[90px] py-2 lg:py-3 rounded-2xl transition-all ${
-                isActive ? "text-[#F97316]" : "text-white hover:bg-white/10"
+              `flex flex-col items-center justify-center w-[78px] lg:w-[90px] py-2 lg:py-3 rounded-2xl transition-all ${isActive ? "text-[#F97316]" : "text-white hover:bg-white/10"
               }`
             }
           >
@@ -64,16 +62,14 @@ export default function Sidebar({ onNavigate }) {
               <>
                 {typeof item.icon === "string" ? (
                   <span
-                    className={`sidebar-icon w-6 h-6 lg:w-8 lg:h-8 mb-1 lg:mb-2 transition-all ${
-                      isActive ? "sidebar-icon-active" : ""
-                    }`}
+                    className={`sidebar-icon w-6 h-6 lg:w-8 lg:h-8 mb-1 lg:mb-2 transition-all ${isActive ? "sidebar-icon-active" : ""
+                      }`}
                     style={{ "--icon-url": `url(${item.icon})` }}
                   />
                 ) : (
                   <item.icon
-                    className={`w-6 h-6 lg:w-8 lg:h-8 mb-1 lg:mb-2 ${
-                      isActive ? "text-[#F97316]" : "text-white"
-                    }`}
+                    className={`w-6 h-6 lg:w-8 lg:h-8 mb-1 lg:mb-2 ${isActive ? "text-[#F97316]" : "text-white"
+                      }`}
                   />
                 )}
                 <span className="text-[10px] lg:text-xs text-center leading-snug font-bold px-1">
