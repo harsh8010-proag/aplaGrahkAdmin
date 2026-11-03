@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   FileText,
@@ -155,6 +155,7 @@ export default function Applications() {
   const [updatingId, setUpdatingId] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [statusFilter, setStatusFilter] = useState("All Status");
+  const [sortBy, setSortBy] = useState("default");
   const [searchTerm, setSearchTerm] = useState("");
   const applicationsPerPage = 6;
 
@@ -181,10 +182,33 @@ export default function Applications() {
 
   const applications = allApplications?.applications || [];
 
-  // Newest application pehle dikhane ke liye
-  const sortedApplications = [...applications].sort(
-    (a, b) => new Date(b.createdAt) - new Date(a.createdAt),
-  );
+  const sortedApplications = useMemo(() => {
+    return [...applications].sort((a, b) => {
+      if (sortBy === "a-z") {
+        const nameA = getApplicantName(a).trim();
+        const nameB = getApplicantName(b).trim();
+        if (!nameA && !nameB) return 0;
+        if (!nameA) return 1;
+        if (!nameB) return -1;
+        const cmp = nameA.localeCompare(nameB, undefined, { sensitivity: "base" });
+        return cmp !== 0 ? cmp : new Date(b.createdAt) - new Date(a.createdAt);
+      }
+      if (sortBy === "z-a") {
+        const nameA = getApplicantName(a).trim();
+        const nameB = getApplicantName(b).trim();
+        if (!nameA && !nameB) return 0;
+        if (!nameA) return 1;
+        if (!nameB) return -1;
+        const cmp = nameB.localeCompare(nameA, undefined, { sensitivity: "base" });
+        return cmp !== 0 ? cmp : new Date(b.createdAt) - new Date(a.createdAt);
+      }
+      if (sortBy === "oldest") {
+        return new Date(a.createdAt) - new Date(b.createdAt);
+      }
+      // Default: newest first
+      return new Date(b.createdAt) - new Date(a.createdAt);
+    });
+  }, [applications, sortBy]);
 
   const pendingCount = applications.filter((app) => app.status === "Pending").length;
   const approvedCount = applications.filter((app) => app.status === "Completed").length;
@@ -616,13 +640,28 @@ export default function Applications() {
                 setStatusFilter(e.target.value);
                 setCurrentPage(1);
               }}
-              className="w-full sm:w-auto px-4 py-2 text-sm font-bold text-gray-700 bg-white border border-gray-200 rounded-full focus:outline-none focus:ring-2 focus:ring-[#FF8303]/20 appearance-none pr-8 bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20width%3D%2212%22%20height%3D%228%22%20viewBox%3D%220%200%2012%208%20%22%20fill%3D%22none%22%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%3E%3Cpath%20d%3D%22M1%201.5L6%206.5L11%201.5%22%20stroke%3D%22%23666666%22%20stroke-width%3D%221.5%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22/%3E%3C/svg%3E')] bg-[length:12px_8px] bg-no-repeat bg-[position:calc(100%-1rem)_center]"
+              className="w-full sm:w-auto px-4 py-2 text-sm font-bold text-gray-700 bg-white border border-gray-200 rounded-full focus:outline-none focus:ring-2 focus:ring-[#FF8303]/20 appearance-none pr-8 bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20width%3D%2212%22%20height%3D%228%22%20viewBox%3D%220%200%2012%208%20%22%20fill%3D%22none%22%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%3E%3Cpath%20d%3D%22M1%201.5L6%206.5L11%201.5%22%20stroke%3D%22%23666666%22%20stroke-width%3D%221.5%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22/%3E%3C/svg%3E')] bg-[length:12px_8px] bg-no-repeat bg-[position:calc(100%-1rem)_center] cursor-pointer"
             >
               <option>All Status</option>
               <option>Pending</option>
               <option>Completed</option>
               <option>Rejected</option>
               <option>In Progress</option>
+            </select>
+
+            <select
+              value={sortBy}
+              onChange={(e) => {
+                setSortBy(e.target.value);
+                setCurrentPage(1);
+              }}
+              className="w-full sm:w-auto px-4 py-2 text-sm font-bold text-gray-700 bg-white border border-gray-200 rounded-full focus:outline-none focus:ring-2 focus:ring-[#FF8303]/20 appearance-none pr-8 bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20width%3D%2212%22%20height%3D%228%22%20viewBox%3D%220%200%2012%208%20%22%20fill%3D%22none%22%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%3E%3Cpath%20d%3D%22M1%201.5L6%206.5L11%201.5%22%20stroke%3D%22%23666666%22%20stroke-width%3D%221.5%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22/%3E%3C/svg%3E')] bg-[length:12px_8px] bg-no-repeat bg-[position:calc(100%-1rem)_center] cursor-pointer"
+            >
+              <option value="default">Sort by</option>
+              <option value="a-z">A to Z</option>
+              <option value="z-a">Z to A</option>
+              <option value="newest">Newest</option>
+              <option value="oldest">Oldest</option>
             </select>
 
             <SearchInput
@@ -632,21 +671,23 @@ export default function Applications() {
               value={searchTerm}
               onChange={handleSearchChange}
             />
-            <button
-              onClick={handleExport}
-              title="Export to CSV"
-              className="p-2.5 bg-gray-50 border border-gray-200 rounded-full text-gray-600 hover:bg-gray-100 hover:border-[#FF8303] hover:text-[#FF8303] transition-colors focus:outline-none focus:ring-2 focus:ring-[#FF8303]/20 shrink-0"
-            >
-              <Upload className="w-4 h-4" />
-            </button>
-            <button
-              onClick={refetch}
-              disabled={isLoading}
-              title="Refresh"
-              className="p-2.5 bg-gray-50 border border-gray-200 rounded-full text-gray-600 hover:bg-gray-100 hover:border-[#FF8303] hover:text-[#FF8303] transition-colors focus:outline-none focus:ring-2 focus:ring-[#FF8303]/20 shrink-0 disabled:opacity-60 disabled:cursor-not-allowed"
-            >
-              <RefreshCw className={`w-4 h-4 ${isLoading ? "animate-spin" : ""}`} />
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={handleExport}
+                title="Export to CSV"
+                className="p-2.5 bg-gray-50 border border-gray-200 rounded-full text-gray-600 hover:bg-gray-100 hover:border-[#FF8303] hover:text-[#FF8303] transition-colors focus:outline-none focus:ring-2 focus:ring-[#FF8303]/20 shrink-0"
+              >
+                <Upload className="w-4 h-4" />
+              </button>
+              <button
+                onClick={refetch}
+                disabled={isLoading}
+                title="Refresh"
+                className="p-2.5 bg-gray-50 border border-gray-200 rounded-full text-gray-600 hover:bg-gray-100 hover:border-[#FF8303] hover:text-[#FF8303] transition-colors focus:outline-none focus:ring-2 focus:ring-[#FF8303]/20 shrink-0 disabled:opacity-60 disabled:cursor-not-allowed"
+              >
+                <RefreshCw className={`w-4 h-4 ${isLoading ? "animate-spin" : ""}`} />
+              </button>
+            </div>
           </div>
         </div>
 

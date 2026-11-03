@@ -27,6 +27,7 @@ const AuthGate = ({ children }) => {
     }, []); // empty deps — run once, not on every render
 
     if (!bootstrapped) {
+
         return <div className="flex items-center justify-center h-screen bg-slate-50/50 backdrop-blur-sm">
             <div className="flex flex-col items-center space-y-4 p-8 rounded-2xl bg-white shadow-xl border border-slate-100/50 animate-in fade-in duration-300">
                 <div className="relative flex items-center justify-center">
@@ -38,7 +39,7 @@ const AuthGate = ({ children }) => {
                     <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-0.5 animate-pulse">Initializing Portal...</p>
                 </div>
             </div>
-        </div>; // or a splash screen / spinner
+        </div>;   // or a splash screen / spinner
     }
 
     return children;
