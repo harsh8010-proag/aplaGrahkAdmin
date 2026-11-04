@@ -751,9 +751,15 @@ export default function CreateServices() {
     const errors = [];
     if (!name.en?.trim()) errors.push("Service name (English) is required.");
     if (!description.en?.trim()) errors.push("Description (English) is required.");
+    if (serviceFee === "" || !Number.isFinite(Number(serviceFee)) || Number(serviceFee) <= 0) {
+      errors.push("Enter a service fee greater than 0.");
+    }
+    if (platformFee !== "" && (!Number.isFinite(Number(platformFee)) || Number(platformFee) < 0)) {
+      errors.push("Enter a valid platform fee.");
+    }
     if (iconRequired && !iconFile) errors.push("Service icon is required.");
     return errors;
-  }, [name, description, iconRequired, iconFile]);
+  }, [name, description, serviceFee, platformFee, iconRequired, iconFile]);
 
   // ============ SUBMIT ============
   const handleSubmit = async (e) => {
@@ -764,6 +770,12 @@ export default function CreateServices() {
       toast.error(validationErrors[0]);
       // Jump to the step with the first error
       if (!name.en?.trim() || !description.en?.trim()) setActiveStep(0);
+      else if (
+        serviceFee === "" ||
+        !Number.isFinite(Number(serviceFee)) ||
+        Number(serviceFee) <= 0 ||
+        (platformFee !== "" && (!Number.isFinite(Number(platformFee)) || Number(platformFee) < 0))
+      ) setActiveStep(1);
       else if (iconRequired && !iconFile) setActiveStep(1);
       return;
     }
@@ -955,14 +967,18 @@ export default function CreateServices() {
               >
                 <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
                   <div>
-                    <FieldLabel>Service Fee</FieldLabel>
+                    <FieldLabel required>Service Fee</FieldLabel>
                     <TextInput
                       type="number"
-                      min="0"
+                      min="0.01"
                       value={serviceFee}
                       onChange={(e) => setServiceFee(e.target.value)}
                       placeholder="e.g. 1500"
                     />
+                    {submitAttempted &&
+                      (serviceFee === "" || !Number.isFinite(Number(serviceFee)) || Number(serviceFee) <= 0) && (
+                        <p className="mt-1 text-xs text-red-500">Enter a service fee greater than 0.</p>
+                      )}
                   </div>
 
                   <div>
@@ -974,6 +990,11 @@ export default function CreateServices() {
                       onChange={(e) => setPlatformFee(e.target.value)}
                       placeholder="e.g. 0"
                     />
+                    {submitAttempted &&
+                      platformFee !== "" &&
+                      (!Number.isFinite(Number(platformFee)) || Number(platformFee) < 0) && (
+                        <p className="mt-1 text-xs text-red-500">Enter a valid platform fee.</p>
+                      )}
                   </div>
 
                   <div className="sm:col-span-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700 flex items-center justify-between">
