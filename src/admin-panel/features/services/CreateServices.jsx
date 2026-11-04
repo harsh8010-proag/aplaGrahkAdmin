@@ -203,7 +203,7 @@ function OptionsEditor({ options, onChange }) {
   return (
     <div className="space-y-3 rounded-lg border border-dashed border-slate-200 p-3">
       <div className="flex items-center justify-between">
-        <FieldLabel required>Options</FieldLabel>
+        <FieldLabel>Options</FieldLabel>
         <button
           type="button"
           onClick={addOption}
@@ -450,6 +450,7 @@ export default function CreateServices() {
   const location = useLocation();
   const editingService = location.state?.serviceToEdit || null;
   const isEditMode = Boolean(editingService);
+  const iconRequired = !isEditMode || !(editingService?.icon || editingService?.iconUrl);
 
   const [updateService, { isLoading: isUpdating }] = useUpdateServiceMutation();
   const [createService, { isLoading }] = useCreateServiceMutation();
@@ -750,23 +751,9 @@ export default function CreateServices() {
     const errors = [];
     if (!name.en?.trim()) errors.push("Service name (English) is required.");
     if (!description.en?.trim()) errors.push("Description (English) is required.");
-    if (serviceFee === "" || Number.isNaN(Number(serviceFee)) || Number(serviceFee) < 0)
-      errors.push("Enter a valid service fee.");
-    if (platformFee === "" || Number.isNaN(Number(platformFee)) || Number(platformFee) < 0)
-      errors.push("Enter a valid platform fee.");
-    formFields.forEach((f, i) => {
-      if (!f.key.trim() || !OPTION_BASED_TYPES.includes(f.inputType)) return;
-      if (f.options.length === 0) {
-        errors.push(`Field #${i + 1} ("${f.key}") is a ${f.inputType} but has no options.`);
-        return;
-      }
-      const incomplete = f.options.some((o) => !o.value?.trim() || !o.label?.en?.trim());
-      if (incomplete) {
-        errors.push(`Field #${i + 1} ("${f.key}") has an option missing a value or English label.`);
-      }
-    });
+    if (iconRequired && !iconFile) errors.push("Service icon is required.");
     return errors;
-  }, [name, description, serviceFee, platformFee, formFields]);
+  }, [name, description, iconRequired, iconFile]);
 
   // ============ SUBMIT ============
   const handleSubmit = async (e) => {
@@ -777,16 +764,18 @@ export default function CreateServices() {
       toast.error(validationErrors[0]);
       // Jump to the step with the first error
       if (!name.en?.trim() || !description.en?.trim()) setActiveStep(0);
-      else if (serviceFee === "" || platformFee === "" || Number.isNaN(Number(totalFee)) || totalFee < 0) setActiveStep(1);
-      else setActiveStep(5); // form field errors
+      else if (iconRequired && !iconFile) setActiveStep(1);
       return;
     }
 
     const cleanedFormFields = formFields
-      .filter((f) => f.key && f.key.trim() !== "")
-      .map((f) =>
-        OPTION_BASED_TYPES.includes(f.inputType) ? f : { ...f, options: undefined },
-      );
+      .filter((f) => f.label?.en?.trim() || f.label?.mr?.trim() || f.label?.hi?.trim())
+      .map((f) => ({
+        ...f,
+        options: OPTION_BASED_TYPES.includes(f.inputType)
+          ? f.options.filter((option) => option.value?.trim() && option.label?.en?.trim())
+          : undefined,
+      }));
 
     const cleanedDocuments = documents.filter(
       (d) => d.documentTypeId && d.documentTypeId.trim() !== "",
@@ -797,8 +786,8 @@ export default function CreateServices() {
 
       fd.append("name", JSON.stringify(name));
       fd.append("description", JSON.stringify(description));
-      fd.append("serviceFee", serviceFee);
-      fd.append("platformFee", platformFee);
+      fd.append("serviceFee", serviceFee || "0");
+      fd.append("platformFee", platformFee || "0");
       fd.append("price", String(totalFee));
       fd.append("processingTime", JSON.stringify(processingTime));
       fd.append("documents", JSON.stringify(cleanedDocuments));
@@ -929,7 +918,13 @@ export default function CreateServices() {
                 description="Core details shown to citizens across English and Marathi."
               >
                 <div className="space-y-5">
-                  <TriLangInput label="Service Name" value={name} onChange={setName} required />
+                  <TriLangInput
+                    label="Service Name"
+                    value={name}
+                    onChange={setName}
+                    required
+                    showError={submitAttempted}
+                  />
                   <TriLangInput
                     label="Description"
                     value={description}
@@ -960,7 +955,7 @@ export default function CreateServices() {
               >
                 <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
                   <div>
-                    <FieldLabel required>Service Fee</FieldLabel>
+                    <FieldLabel>Service Fee</FieldLabel>
                     <TextInput
                       type="number"
                       min="0"
@@ -971,7 +966,7 @@ export default function CreateServices() {
                   </div>
 
                   <div>
-                    <FieldLabel required>Platform Fee</FieldLabel>
+                    <FieldLabel>Platform Fee</FieldLabel>
                     <TextInput
                       type="number"
                       min="0"
@@ -1017,7 +1012,7 @@ export default function CreateServices() {
                   </div>
 
                   <div className="sm:col-span-2">
-                    <FieldLabel>Icon</FieldLabel>
+                    <FieldLabel required={iconRequired}>Icon</FieldLabel>
                     <div className="flex items-center gap-4">
                       <label className="flex cursor-pointer items-center gap-2 rounded-lg border border-dashed border-slate-300 px-4 py-3 text-sm text-slate-600 transition hover:border-indigo-400 hover:text-indigo-600">
                         <UploadCloud size={16} />
@@ -1045,6 +1040,9 @@ export default function CreateServices() {
                         </div>
                       )}
                     </div>
+                    {submitAttempted && iconRequired && !iconFile && (
+                      <p className="mt-1 text-xs text-red-500">Service icon is required.</p>
+                    )}
                   </div>
                 </div>
               </SectionCard>
